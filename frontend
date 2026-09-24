@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Community Grievance Orchestrator</title>
+<title>Civic Resolve</title>
 <style>
   :root {
     --bg: #eef2f0; --surface: #ffffff; --ink: #14231f; --muted: #5b6b66;
@@ -152,7 +152,7 @@
 <div class="wrap">
 
   <header>
-    <h1>Community Grievance Resolution Orchestrator</h1>
+    <h1>Civic Resolve</h1>
     <p class="subtitle">Report a civic problem. It is routed to the right department and tracked until it is resolved.</p>
   </header>
 
@@ -162,11 +162,6 @@
     <section class="card form-card" aria-labelledby="formTitle">
       <h2 id="formTitle">Report a problem</h2>
       <form id="complaintForm" novalidate>
-        <label for="text" style="margin-top:0">What is the problem?</label>
-        <textarea id="text" maxlength="500" required
-          placeholder="e.g. Water leaking on Main Street near the market"></textarea>
-        <div class="hint"><span id="textError" role="alert"></span><span id="counter">0 / 500</span></div>
-
         <label for="category">Category</label>
         <select id="category">
           <option value="water">Water</option>
@@ -175,6 +170,12 @@
           <option value="sanitation">Sanitation</option>
           <option value="other">Other</option>
         </select>
+
+        <div id="otherCategoryWrap" hidden>
+          <label for="otherCategory">Mention the type of problem</label>
+          <input type="text" id="otherCategory" maxlength="100"
+                 placeholder="Enter the type of problem">
+        </div>
 
         <fieldset>
           <legend>How urgent is it?</legend>
@@ -188,6 +189,24 @@
           <div class="scale"><span>Can wait</span><span>Critical</span></div>
         </fieldset>
 
+
+
+
+        <label for="text" style="margin-top:0">What is the problem?</label>
+        <textarea id="text" maxlength="500" required
+          placeholder="e.g. Water leaking on Main Street near the market"></textarea>
+        <div class="hint"><span id="textError" role="alert"></span><span id="counter">0 / 500</span></div>
+
+        <label for="contactNumber">Contact number</label>
+        <input type="tel" id="contactNumber" name="contactNumber" inputmode="numeric"
+               autocomplete="tel" maxlength="10" pattern="[0-9]{10}"
+               placeholder="e.g. 9876543210" required>
+        <div class="hint"><span id="contactError" role="alert"></span><span>10 digits</span></div>
+
+        <label for="attachment">Choose file</label>
+        <input type="file" id="attachment" name="attachment"
+               accept="image/*,.pdf,.doc,.docx">
+        <div class="hint"><span id="fileError" role="alert"></span><span>Optional</span></div>
 
         <label>Complaint location</label>
         <div class="location-row">
@@ -293,6 +312,9 @@ const $ = (id) => document.getElementById(id);
 const form = $('complaintForm'), textEl = $('text'), resultDiv = $('result');
 const submitBtn = $('submitBtn'), ticketBody = $('ticketBody');
 const getLocationBtn = $('getLocationBtn'), locationStatus = $('locationStatus');
+const contactEl = $('contactNumber'), attachmentEl = $('attachment');
+const categoryEl = $('category'), otherCategoryWrap = $('otherCategoryWrap'),
+      otherCategoryEl = $('otherCategory');
 
 const STATUSES = ['all', 'open', 'escalated', 'resolved'];
 let tickets = [];          // normalized ticket objects
@@ -347,7 +369,22 @@ textEl.addEventListener('input', () => {
   $('counter').textContent = `${textEl.value.length} / 500`;
   $('textError').textContent = '';
 });
+contactEl.addEventListener('input', () => {
+  contactEl.value = contactEl.value.replace(/\D/g, '').slice(0, 10);
+  $('contactError').textContent = '';
+});
+attachmentEl.addEventListener('change', () => {
+  $('fileError').textContent = '';
+});
 
+
+
+categoryEl.addEventListener('change', () => {
+  const isOther = categoryEl.value === 'other';
+  otherCategoryWrap.hidden = !isOther;
+  otherCategoryEl.required = isOther;
+  if (!isOther) otherCategoryEl.value = '';
+});
 
 getLocationBtn.addEventListener('click', () => {
   if (!navigator.geolocation) {
@@ -395,13 +432,38 @@ form.addEventListener('submit', async (e) => {
     textEl.focus();
     return;
   }
-  const payload = {
-    text,
-    category: $('category').value,
-    urgency: parseInt(form.elements.urgency.value, 10),
-    latitude: selectedLocation?.lat ?? null,
-    longitude: selectedLocation?.lng ?? null
-  };
+  const contact = contactEl.value.trim();
+  const customCategory = otherCategoryEl.value.trim();
+
+  $('contactError').textContent = '';
+  if (categoryEl.value === 'other' && !customCategory) {
+    otherCategoryEl.focus();
+    return;
+  }
+  $('fileError').textContent = '';
+
+  if (!/^\d{10}$/.test(contact)) {
+    $('contactError').textContent = 'Enter a valid 10-digit contact number.';
+    contactEl.focus();
+    return;
+  }
+
+  const file = attachmentEl.files[0];
+  if (file && file.size > 10 * 1024 * 1024) {
+    $('fileError').textContent = 'File must be 10 MB or smaller.';
+    attachmentEl.focus();
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('text', text);
+  formData.append('category', categoryEl.value);
+  formData.append('other_category', categoryEl.value === 'other' ? customCategory : '');
+  formData.append('urgency', form.elements.urgency.value);
+  formData.append('contact_number', contact);
+  formData.append('latitude', selectedLocation?.lat ?? '');
+  formData.append('longitude', selectedLocation?.lng ?? '');
+  if (file) formData.append('attachment', file);
 
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting…';
@@ -409,12 +471,15 @@ form.addEventListener('submit', async (e) => {
   try {
     const data = await api('/submit', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: formData
     });
     showResult('ok', `Complaint submitted. Routed to <b>${esc(data.department)}</b> with priority score <b>${esc(data.priority)}</b>.`);
     form.reset();
+    otherCategoryWrap.hidden = true;
+    otherCategoryEl.required = false;
     $('counter').textContent = '0 / 500';
+    $('contactError').textContent = '';
+    $('fileError').textContent = '';
     selectedLocation = null;
     locationStatus.textContent = 'Location is optional. You can tag the complaint on the map.';
     loadTickets();
