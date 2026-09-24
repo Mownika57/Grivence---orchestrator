@@ -277,6 +277,31 @@ tr:hover {
     color: #6b7280;
 }
 
+/* AI IMAGE DETECTION */
+.image-detection-status {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 13px;
+}
+
+.image-detection-result {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 13px;
+    border: 1px solid #bbf7d0;
+}
+
+.image-detection-result strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
 /* LOCATION */
 .location-display {
     background: #f0fdf4;
@@ -457,6 +482,15 @@ footer {
                         Maximum file size: 10 MB
                     </div>
 
+                    <div id="imageDetectionStatus" class="image-detection-status" style="display:none;"></div>
+
+                    <div id="imageDetectionResult" class="image-detection-result" style="display:none;">
+                        <strong>AI Image Detection</strong>
+                        <div id="detectedIssue"></div>
+                        <div id="detectedConfidence"></div>
+                        <button type="button" class="secondary-btn" id="applyDetectionBtn" style="margin-top:8px;">Apply Detected Category</button>
+                    </div>
+
                 </div>
 
 
@@ -624,6 +658,54 @@ footer {
     Civic Resolve © 2026 | Hackathon Prototype
 </footer>
 
+
+<script type="module">
+/* CLIENT-SIDE AI IMAGE DETECTION — no backend required */
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+
+let imageClassifier = null;
+
+const AI_LABELS = [
+    "a pothole or damaged road",
+    "garbage or waste dumped on a street",
+    "a water leak or flooded area",
+    "a broken street light",
+    "an electrical problem or damaged electric pole",
+    "sewage or drainage overflow",
+    "a normal street scene"
+];
+
+const AI_MAPPINGS = {
+    "a pothole or damaged road": { category: "Road", issue: "Possible road damage / pothole" },
+    "garbage or waste dumped on a street": { category: "Sanitation", issue: "Possible garbage / waste problem" },
+    "a water leak or flooded area": { category: "Water", issue: "Possible water leak / flooding" },
+    "a broken street light": { category: "Other", issue: "Possible broken street light" },
+    "an electrical problem or damaged electric pole": { category: "Electricity", issue: "Possible electrical problem" },
+    "sewage or drainage overflow": { category: "Sanitation", issue: "Possible sewage / drainage problem" },
+    "a normal street scene": { category: "Other", issue: "No clear civic issue detected" }
+};
+
+async function getImageClassifier() {
+    if (!imageClassifier) {
+        imageClassifier = await pipeline("zero-shot-image-classification", "Xenova/clip-vit-base-patch32");
+    }
+    return imageClassifier;
+}
+
+window.detectCivicImage = async function(file) {
+    if (!file || !file.type.startsWith("image/")) throw new Error("Please select an image file.");
+    const classifier = await getImageClassifier();
+    const imageUrl = URL.createObjectURL(file);
+    try {
+        const results = await classifier(imageUrl, AI_LABELS);
+        const top = results[0];
+        const mapping = AI_MAPPINGS[top.label] || { category: "Other", issue: top.label };
+        return { label: top.label, score: top.score, category: mapping.category, issue: mapping.issue };
+    } finally {
+        URL.revokeObjectURL(imageUrl);
+    }
+};
+</script>
 
 <script>
 
@@ -823,47 +905,67 @@ const fileInfo =
     document.getElementById("fileInfo");
 
 
-fileInput.addEventListener(
-    "change",
-    function () {
+const imageDetectionStatus = document.getElementById("imageDetectionStatus");
+const imageDetectionResult = document.getElementById("imageDetectionResult");
+const detectedIssue = document.getElementById("detectedIssue");
+const detectedConfidence = document.getElementById("detectedConfidence");
+const applyDetectionBtn = document.getElementById("applyDetectionBtn");
+let latestDetection = null;
 
-        const file = this.files[0];
+fileInput.addEventListener("change", async function () {
+    const file = this.files[0];
+    imageDetectionStatus.style.display = "none";
+    imageDetectionResult.style.display = "none";
+    latestDetection = null;
 
-        if (!file) {
-
-            fileInfo.textContent =
-                "Maximum file size: 10 MB";
-
-            return;
-
-        }
-
-
-        const maxSize =
-            10 * 1024 * 1024;
-
-
-        if (file.size > maxSize) {
-
-            alert(
-                "File size must be less than 10 MB."
-            );
-
-            this.value = "";
-
-            fileInfo.textContent =
-                "Maximum file size: 10 MB";
-
-            return;
-
-        }
-
-
-        fileInfo.textContent =
-            `${file.name} selected (${formatFileSize(file.size)})`;
-
+    if (!file) {
+        fileInfo.textContent = "Maximum file size: 10 MB";
+        return;
     }
-);
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+        alert("File size must be less than 10 MB.");
+        this.value = "";
+        fileInfo.textContent = "Maximum file size: 10 MB";
+        return;
+    }
+
+    fileInfo.textContent = `${file.name} selected (${formatFileSize(file.size)})`;
+
+    if (!file.type.startsWith("image/")) {
+        imageDetectionStatus.style.display = "block";
+        imageDetectionStatus.textContent = "⚠️ AI detection is available for image files only.";
+        return;
+    }
+
+    imageDetectionStatus.style.display = "block";
+    imageDetectionStatus.textContent = "🤖 Loading AI model... First use may take some time.";
+
+    try {
+        const result = await window.detectCivicImage(file);
+        latestDetection = result;
+        imageDetectionStatus.textContent = "✓ Image analyzed in your browser.";
+        detectedIssue.textContent = `Detected issue: ${result.issue}`;
+        detectedConfidence.textContent = `AI confidence: ${(result.score * 100).toFixed(1)}% | Suggested category: ${result.category}`;
+        imageDetectionResult.style.display = "block";
+    } catch (error) {
+        console.error("AI image detection failed:", error);
+        imageDetectionStatus.textContent = "⚠️ AI detection failed. You can still submit the complaint manually.";
+    }
+});
+
+applyDetectionBtn.addEventListener("click", function () {
+    if (!latestDetection) return;
+    category.value = latestDetection.category;
+    category.dispatchEvent(new Event("change"));
+    if (latestDetection.category === "Other") customCategory.value = latestDetection.issue;
+    if (!description.value.trim()) {
+        description.value = latestDetection.issue;
+        description.dispatchEvent(new Event("input"));
+    }
+    imageDetectionStatus.textContent = `✓ Detected category "${latestDetection.category}" applied.`;
+});
 
 
 function formatFileSize(bytes) {
