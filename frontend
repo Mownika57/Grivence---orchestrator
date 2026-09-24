@@ -444,7 +444,7 @@ footer {
                 <div class="form-group">
 
                     <label for="file">
-                        Choose File
+                        Choose Image
                     </label>
 
                     <input
