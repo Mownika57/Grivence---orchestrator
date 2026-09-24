@@ -1,1 +1,532 @@
+import uuid
+from datetime import datetime
 
+# ============================================================
+# CIVIC RESOLVE - USER INPUT BACKEND DEMO
+# No API / No Flask / No external packages required
+# ============================================================
+
+complaints = []
+
+# ------------------------------------------------------------
+# DEPARTMENT ROUTING
+# ------------------------------------------------------------
+
+DEPARTMENTS = {
+    "Water": "Water Department",
+    "Electricity": "Electricity Department",
+    "Road": "Road & Transport Department",
+    "Sanitation": "Sanitation Department",
+    "Other": "General Administration"
+}
+
+# ------------------------------------------------------------
+# IMAGE DETECTION DEMO
+# ------------------------------------------------------------
+
+def detect_problem(filename):
+
+    filename = filename.lower()
+
+    if "pothole" in filename:
+        return "Pothole", 94
+
+    elif "water" in filename:
+        return "Water Shortage / Leakage", 89
+
+    elif "road" in filename:
+        return "Road Damage", 86
+
+    elif "garbage" in filename:
+        return "Garbage / Waste Problem", 91
+
+    elif "electric" in filename:
+        return "Electrical Problem", 88
+
+    else:
+        return "General Civic Issue", 70
+
+
+# ------------------------------------------------------------
+# PRIORITY CALCULATION
+# ------------------------------------------------------------
+
+def calculate_priority(urgency, text):
+
+    priority = int(urgency)
+
+    keywords = [
+        "danger",
+        "accident",
+        "flood",
+        "fire",
+        "burst",
+        "collapsed",
+        "sewage",
+        "unsafe",
+        "emergency"
+    ]
+
+    text = text.lower()
+
+    for word in keywords:
+        if word in text:
+            priority += 1
+
+    if "pothole" in text:
+        priority += 1
+
+    if "no water" in text:
+        priority += 1
+
+    if priority > 5:
+        priority = 5
+
+    return priority
+
+
+# ------------------------------------------------------------
+# PRIORITY NAME
+# ------------------------------------------------------------
+
+def priority_name(priority):
+
+    if priority == 5:
+        return "CRITICAL"
+
+    elif priority == 4:
+        return "HIGH"
+
+    elif priority == 3:
+        return "MEDIUM"
+
+    else:
+        return "LOW"
+
+
+# ------------------------------------------------------------
+# SLA CALCULATION
+# ------------------------------------------------------------
+
+def get_sla(priority):
+
+    sla = {
+        5: "2 hours",
+        4: "6 hours",
+        3: "24 hours",
+        2: "48 hours",
+        1: "72 hours"
+    }
+
+    return sla.get(priority, "72 hours")
+
+
+# ------------------------------------------------------------
+# CREATE COMPLAINT
+# ------------------------------------------------------------
+
+def create_complaint(
+        text,
+        category,
+        urgency,
+        latitude,
+        longitude,
+        image
+):
+
+    # IMAGE DETECTION
+    detected_problem, confidence = detect_problem(image)
+
+    # Automatically determine category from image
+    if detected_problem == "Pothole":
+        category = "Road"
+
+    elif detected_problem == "Water Shortage / Leakage":
+        category = "Water"
+
+    elif detected_problem == "Road Damage":
+        category = "Road"
+
+    elif detected_problem == "Garbage / Waste Problem":
+        category = "Sanitation"
+
+    elif detected_problem == "Electrical Problem":
+        category = "Electricity"
+
+    # PRIORITY
+    priority = calculate_priority(urgency, text)
+
+    # DEPARTMENT
+    department = DEPARTMENTS.get(
+        category,
+        "General Administration"
+    )
+
+    # SLA
+    sla = get_sla(priority)
+
+    # STATUS
+    if priority >= 5:
+        status = "Escalated"
+    else:
+        status = "Open"
+
+    # CREATE TICKET
+    ticket = {
+
+        "id":
+        "CR-" + str(uuid.uuid4())[:8].upper(),
+
+        "text":
+        text,
+
+        "category":
+        category,
+
+        "detected_problem":
+        detected_problem,
+
+        "confidence":
+        confidence,
+
+        "urgency":
+        urgency,
+
+        "priority":
+        priority,
+
+        "priority_name":
+        priority_name(priority),
+
+        "sla":
+        sla,
+
+        "department":
+        department,
+
+        "status":
+        status,
+
+        "latitude":
+        latitude,
+
+        "longitude":
+        longitude,
+
+        "image":
+        image,
+
+        "created":
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    complaints.append(ticket)
+
+    return ticket
+
+
+# ============================================================
+# DASHBOARD STATISTICS
+# ============================================================
+
+def dashboard_statistics():
+
+    total = len(complaints)
+
+    open_count = 0
+    escalated_count = 0
+    resolved_count = 0
+
+    critical = 0
+    high = 0
+    medium = 0
+    low = 0
+
+    water = 0
+    road = 0
+    electricity = 0
+    sanitation = 0
+    other = 0
+
+    for complaint in complaints:
+
+        # STATUS
+        if complaint["status"] == "Open":
+            open_count += 1
+
+        elif complaint["status"] == "Escalated":
+            escalated_count += 1
+
+        elif complaint["status"] == "Resolved":
+            resolved_count += 1
+
+        # PRIORITY
+        priority = complaint["priority"]
+
+        if priority == 5:
+            critical += 1
+
+        elif priority == 4:
+            high += 1
+
+        elif priority == 3:
+            medium += 1
+
+        else:
+            low += 1
+
+        # CATEGORY
+        category = complaint["category"]
+
+        if category == "Water":
+            water += 1
+
+        elif category == "Road":
+            road += 1
+
+        elif category == "Electricity":
+            electricity += 1
+
+        elif category == "Sanitation":
+            sanitation += 1
+
+        else:
+            other += 1
+
+    return {
+
+        "total_complaints": total,
+        "open": open_count,
+        "escalated": escalated_count,
+        "resolved": resolved_count,
+
+        "critical": critical,
+        "high": high,
+        "medium": medium,
+        "low": low,
+
+        "water": water,
+        "road": road,
+        "electricity": electricity,
+        "sanitation": sanitation,
+        "other": other
+    }
+
+
+# ============================================================
+# PRINT DASHBOARD
+# ============================================================
+
+def show_dashboard():
+
+    stats = dashboard_statistics()
+
+    print("\n")
+    print("=" * 60)
+    print("              CIVIC RESOLVE DASHBOARD")
+    print("=" * 60)
+
+    print()
+
+    print("TOTAL COMPLAINTS :", stats["total_complaints"])
+    print("OPEN             :", stats["open"])
+    print("ESCALATED        :", stats["escalated"])
+    print("RESOLVED         :", stats["resolved"])
+
+    print()
+    print("-" * 60)
+    print("PRIORITY STATISTICS")
+    print("-" * 60)
+
+    print("CRITICAL         :", stats["critical"])
+    print("HIGH             :", stats["high"])
+    print("MEDIUM           :", stats["medium"])
+    print("LOW              :", stats["low"])
+
+    print()
+    print("-" * 60)
+    print("CATEGORY STATISTICS")
+    print("-" * 60)
+
+    print("WATER            :", stats["water"])
+    print("ROAD             :", stats["road"])
+    print("ELECTRICITY      :", stats["electricity"])
+    print("SANITATION       :", stats["sanitation"])
+    print("OTHER            :", stats["other"])
+
+    print()
+    print("=" * 60)
+
+
+# ============================================================
+# PRINT TICKET
+# ============================================================
+
+def show_ticket(ticket):
+
+    print()
+    print("=" * 60)
+    print("                 CIVIC RESOLVE TICKET")
+    print("=" * 60)
+
+    print("Ticket ID       :", ticket["id"])
+    print("Problem         :", ticket["text"])
+    print("Category        :", ticket["category"])
+
+    print(
+        "AI Detection    :",
+        ticket["detected_problem"]
+    )
+
+    print(
+        "Confidence      :",
+        str(ticket["confidence"]) + "%"
+    )
+
+    print(
+        "Urgency         :",
+        ticket["urgency"],
+        "/ 5"
+    )
+
+    print(
+        "Priority        :",
+        ticket["priority_name"],
+        "(" + str(ticket["priority"]) + "/5)"
+    )
+
+    print("SLA             :", ticket["sla"])
+
+    print(
+        "Department      :",
+        ticket["department"]
+    )
+
+    print("Status          :", ticket["status"])
+
+    print(
+        "Location        :",
+        ticket["latitude"],
+        ",",
+        ticket["longitude"]
+    )
+
+    print("Image           :", ticket["image"])
+
+    print("Created         :", ticket["created"])
+
+    print("=" * 60)
+
+
+# ============================================================
+# USER INPUT
+# ============================================================
+
+def take_user_complaint():
+
+    print()
+    print("=" * 60)
+    print("          CIVIC RESOLVE - NEW COMPLAINT")
+    print("=" * 60)
+
+    # Complaint description
+    text = input("\nEnter your complaint: ")
+
+    # Category
+    print("\nSelect Category:")
+    print("1. Water")
+    print("2. Electricity")
+    print("3. Road")
+    print("4. Sanitation")
+    print("5. Other")
+
+    category_choice = input("Enter choice (1-5): ")
+
+    if category_choice == "1":
+        category = "Water"
+
+    elif category_choice == "2":
+        category = "Electricity"
+
+    elif category_choice == "3":
+        category = "Road"
+
+    elif category_choice == "4":
+        category = "Sanitation"
+
+    else:
+        category = "Other"
+
+    # Urgency
+    print("\nUrgency Level")
+    print("1 = Low")
+    print("2 = Slight")
+    print("3 = Medium")
+    print("4 = High")
+    print("5 = Emergency")
+
+    urgency = int(input("Enter urgency (1-5): "))
+
+    # Location
+    print("\nLocation")
+    latitude = float(input("Enter latitude: "))
+    longitude = float(input("Enter longitude: "))
+
+    # Image
+    print("\nImage")
+    print("Example: pothole.jpg")
+    print("         water_shortage.jpg")
+    print("         road_damage.jpg")
+    print("         garbage.jpg")
+    print("         electric.jpg")
+
+    image = input("Enter image filename: ")
+
+    # CREATE COMPLAINT
+    ticket = create_complaint(
+        text,
+        category,
+        urgency,
+        latitude,
+        longitude,
+        image
+    )
+
+    # SHOW RESULT
+    show_ticket(ticket)
+
+
+# ============================================================
+# MAIN PROGRAM
+# ============================================================
+
+print()
+print("=" * 60)
+print("             CIVIC RESOLVE SYSTEM")
+print("=" * 60)
+
+while True:
+
+    print("\n")
+    print("1. Create New Complaint")
+    print("2. Show Dashboard")
+    print("3. Exit")
+
+    choice = input("\nEnter your choice: ")
+
+    if choice == "1":
+
+        take_user_complaint()
+
+    elif choice == "2":
+
+        show_dashboard()
+
+    elif choice == "3":
+
+        print("\nCIVIC RESOLVE SYSTEM CLOSED.")
+        break
+
+    else:
+
+        print("\nInvalid choice. Please enter 1, 2 or 3.")
