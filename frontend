@@ -1,1 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Community Grievance Orchestrator</title>
+<style>
+  * { box-sizing: border-box; font-family: Arial, sans-serif; }
+  body { margin: 0; padding: 20px; background: #f4f6f8; color: #222; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
+  .container { display: flex; gap: 20px; flex-wrap: wrap; }
+  .card { background: #fff; border-radius: 8px; padding: 20px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.1); flex: 1; min-width: 320px; }
+  label { display: block; margin-top: 12px; font-size: 13px; font-weight: bold; }
+  input, select, textarea {
+    width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc;
+    border-radius: 4px; font-size: 14px;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  button {
+    margin-top: 16px; padding: 10px 16px; background: #2563eb; color: #fff;
+    border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+  }
+  button:hover { background: #1d4ed8; }
+  #result { margin-top: 12px; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+  th { background: #f9fafb; }
+  .badge {
+    padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;
+    color: #fff; display: inline-block;
+  }
+  .p-high { background: #dc2626; }
+  .p-med { background: #d97706; }
+  .p-low { background: #16a34a; }
+  .status-open { color: #d97706; font-weight: bold; }
+  .status-resolved { color: #16a34a; font-weight: bold; }
+  .status-escalated { color: #dc2626; font-weight: bold; }
+</style>
+</head>
+<body>
 
+<h1>🏛️ Community Grievance Resolution Orchestrator</h1>
+<p class="subtitle">File a civic complaint — it's auto-routed and tracked until resolved.</p>
+
+<div class="container">
+
+  <!-- Submission Form -->
+  <div class="card">
+    <h2>Submit a Complaint</h2>
+    <form id="complaintForm">
+      <label>Complaint Description</label>
+      <textarea id="text" placeholder="e.g. Water leaking on Main Street near the market" required></textarea>
+
+      <label>Category</label>
+      <select id="category">
+        <option value="water">Water</option>
+        <option value="electricity">Electricity</option>
+        <option value="road">Road</option>
+        <option value="sanitation">Sanitation</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label>Urgency (1 = low, 5 = critical)</label>
+      <input type="number" id="urgency" min="1" max="5" value="3" required>
+
+      <button type="submit">Submit Complaint</button>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <!-- Live Dashboard -->
+  <div class="card">
+    <h2>Live Ticket Dashboard</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Category</th><th>Priority</th>
+          <th>Department</th><th>Status</th><th>Created</th>
+        </tr>
+      </thead>
+      <tbody id="ticketBody">
+        <tr><td colspan="6">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const form = document.getElementById('complaintForm');
+const resultDiv = document.getElementById('result');
+const ticketBody = document.getElementById('ticketBody');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    text: document.getElementById('text').value,
+    category: document.getElementById('category').value,
+    urgency: parseInt(document.getElementById('urgency').value)
+  };
+
+  resultDiv.textContent = 'Submitting...';
+  try {
+    const res = await fetch('/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    resultDiv.innerHTML = `✅ Routed to <b>${data.department}</b> — Priority score: <b>${data.priority}</b>`;
+    form.reset();
+    loadTickets();
+  } catch (err) {
+    resultDiv.textContent = '❌ Error submitting complaint.';
+    console.error(err);
+  }
+});
+
+function priorityBadge(score) {
+  score = parseInt(score);
+  if (score >= 15) return `<span class="badge p-high">HIGH (${score})</span>`;
+  if (score >= 8) return `<span class="badge p-med">MEDIUM (${score})</span>`;
+  return `<span class="badge p-low">LOW (${score})</span>`;
+}
+
+function statusClass(status) {
+  if (status === 'escalated') return 'status-escalated';
+  if (status === 'resolved') return 'status-resolved';
+  return 'status-open';
+}
+
+async function loadTickets() {
+  try {
+    const res = await fetch('/tickets');
+    const data = await res.json();
+    if (!data.tickets.length) {
+      ticketBody.innerHTML = '<tr><td colspan="6">No tickets yet.</td></tr>';
+      return;
+    }
+    ticketBody.innerHTML = data.tickets.map(t => `
+      <tr>
+        <td>${t[0]}</td>
+        <td>${t[2]}</td>
+        <td>${priorityBadge(t[3])}</td>
+        <td>${t[4]}</td>
+        <td class="${statusClass(t[5])}">${t[5]}</td>
+        <td>${new Date(t[6]).toLocaleString()}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    ticketBody.innerHTML = '<tr><td colspan="6">Error loading tickets.</td></tr>';
+    console.error(err);
+  }
+}
+
+loadTickets();
+setInterval(loadTickets, 5000); // poll every 5s for live updates
+</script>
+
+</body>
+</html>
