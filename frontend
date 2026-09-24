@@ -2,160 +2,3793 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Community Grievance Orchestrator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CivicResolve — Community Grievance Orchestrator</title>
+
 <style>
-  * { box-sizing: border-box; font-family: Arial, sans-serif; }
-  body { margin: 0; padding: 20px; background: #f4f6f8; color: #222; }
-  h1 { font-size: 22px; margin-bottom: 4px; }
-  .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
-  .container { display: flex; gap: 20px; flex-wrap: wrap; }
-  .card { background: #fff; border-radius: 8px; padding: 20px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.1); flex: 1; min-width: 320px; }
-  label { display: block; margin-top: 12px; font-size: 13px; font-weight: bold; }
-  input, select, textarea {
-    width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc;
-    border-radius: 4px; font-size: 14px;
-  }
-  textarea { resize: vertical; min-height: 70px; }
-  button {
-    margin-top: 16px; padding: 10px 16px; background: #2563eb; color: #fff;
-    border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
-  }
-  button:hover { background: #1d4ed8; }
-  #result { margin-top: 12px; font-size: 13px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
-  th { background: #f9fafb; }
-  .badge {
-    padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;
-    color: #fff; display: inline-block;
-  }
-  .p-high { background: #dc2626; }
-  .p-med { background: #d97706; }
-  .p-low { background: #16a34a; }
-  .status-open { color: #d97706; font-weight: bold; }
-  .status-resolved { color: #16a34a; font-weight: bold; }
-  .status-escalated { color: #dc2626; font-weight: bold; }
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+}
+
+:root{
+    --primary:#2563eb;
+    --primary-dark:#1d4ed8;
+    --bg:#f4f7fb;
+    --card:#ffffff;
+    --text:#172033;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --danger:#dc2626;
+    --warning:#d97706;
+    --success:#16a34a;
+    --sidebar:#111827;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    width:250px;
+    height:100vh;
+    background:var(--sidebar);
+    color:white;
+    padding:25px 18px;
+    z-index:50;
+}
+
+.logo{
+    font-size:21px;
+    font-weight:800;
+    margin-bottom:35px;
+    padding:0 8px;
+}
+
+.logo span{
+    color:#60a5fa;
+}
+
+.nav-title{
+    color:#64748b;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin:20px 10px 8px;
+}
+
+.nav-item{
+    padding:12px 14px;
+    margin-bottom:6px;
+    border-radius:9px;
+    cursor:pointer;
+    color:#cbd5e1;
+    transition:.2s;
+}
+
+.nav-item:hover,
+.nav-item.active{
+    background:#1e40af;
+    color:white;
+}
+
+/* =========================
+   MAIN
+========================= */
+
+.main{
+    margin-left:250px;
+    padding:28px;
+}
+
+.page{
+    display:none;
+}
+
+.page.active{
+    display:block;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.topbar h1{
+    font-size:26px;
+}
+
+.subtitle{
+    color:var(--muted);
+    margin-top:5px;
+    font-size:14px;
+}
+
+.actions{
+    display:flex;
+    gap:10px;
+}
+
+.btn{
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.btn-primary{
+    background:var(--primary);
+    color:white;
+}
+
+.btn-primary:hover{
+    background:var(--primary-dark);
+}
+
+.btn-light{
+    background:white;
+    border:1px solid var(--border);
+    color:var(--text);
+}
+
+/* =========================
+   STAT CARDS
+========================= */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:16px;
+    margin-bottom:22px;
+}
+
+.stat{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:13px;
+    padding:19px;
+    box-shadow:0 3px 12px rgba(15,23,42,.04);
+}
+
+.stat-icon{
+    font-size:22px;
+    margin-bottom:12px;
+}
+
+.stat-title{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+}
+
+.stat-number{
+    font-size:29px;
+    font-weight:800;
+    margin-top:6px;
+}
+
+.stat-description{
+    color:var(--muted);
+    font-size:11px;
+    margin-top:5px;
+}
+
+/* =========================
+   GRID
+========================= */
+
+.grid-2{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:20px;
+}
+
+.grid-3{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+}
+
+.card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:13px;
+    padding:20px;
+    box-shadow:0 3px 12px rgba(15,23,42,.04);
+}
+
+.card h2{
+    font-size:18px;
+    margin-bottom:16px;
+}
+
+.card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+}
+
+/* =========================
+   FORM
+========================= */
+
+label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    margin:13px 0 5px;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px 11px;
+    border:1px solid #d7dee8;
+    border-radius:7px;
+    background:white;
+    font-size:14px;
+    outline:none;
+    color:var(--text);
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(37,99,235,.08);
+}
+
+textarea{
+    min-height:90px;
+    resize:vertical;
+}
+
+.form-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.file-box{
+    border:1px dashed #cbd5e1;
+    padding:13px;
+    border-radius:8px;
+    background:#f8fafc;
+}
+
+.submit-btn{
+    width:100%;
+    margin-top:18px;
+    padding:13px;
+    border:none;
+    border-radius:8px;
+    background:var(--primary);
+    color:white;
+    font-weight:700;
+    cursor:pointer;
+}
+
+/* =========================
+   TABLE
+========================= */
+
+.controls{
+    display:flex;
+    gap:9px;
+    margin-bottom:15px;
+}
+
+.search{
+    flex:1;
+}
+
+.controls select{
+    width:145px;
+}
+
+.table-wrap{
+    overflow:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+}
+
+th{
+    text-align:left;
+    padding:12px;
+    background:#f8fafc;
+    color:#64748b;
+    font-size:11px;
+    text-transform:uppercase;
+}
+
+td{
+    padding:12px;
+    border-bottom:1px solid #edf1f5;
+}
+
+.ticket-row{
+    cursor:pointer;
+}
+
+.ticket-row:hover{
+    background:#f8fafc;
+}
+
+/* =========================
+   BADGES
+========================= */
+
+.badge{
+    display:inline-block;
+    padding:4px 9px;
+    border-radius:20px;
+    font-size:10px;
+    font-weight:800;
+}
+
+.badge-high{
+    color:#b91c1c;
+    background:#fee2e2;
+}
+
+.badge-medium{
+    color:#b45309;
+    background:#fef3c7;
+}
+
+.badge-low{
+    color:#15803d;
+    background:#dcfce7;
+}
+
+.badge-open{
+    color:#1d4ed8;
+    background:#dbeafe;
+}
+
+.badge-progress{
+    color:#7c3aed;
+    background:#ede9fe;
+}
+
+.badge-resolved{
+    color:#15803d;
+    background:#dcfce7;
+}
+
+.badge-escalated{
+    color:#b91c1c;
+    background:#fee2e2;
+}
+
+/* =========================
+   ACTIVITY
+========================= */
+
+.activity-item{
+    display:flex;
+    gap:12px;
+    padding:13px 0;
+    border-bottom:1px solid #edf1f5;
+}
+
+.activity-icon{
+    width:35px;
+    height:35px;
+    border-radius:50%;
+    background:#eff6ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.activity-text{
+    font-size:13px;
+}
+
+.activity-time{
+    color:#94a3b8;
+    font-size:11px;
+    margin-top:3px;
+}
+
+/* =========================
+   PROGRESS
+========================= */
+
+.progress{
+    height:8px;
+    border-radius:20px;
+    background:#e2e8f0;
+    overflow:hidden;
+    margin-top:8px;
+}
+
+.progress-bar{
+    height:100%;
+    border-radius:20px;
+    background:var(--primary);
+}
+
+/* =========================
+   DEPARTMENT
+========================= */
+
+.department{
+    padding:14px 0;
+    border-bottom:1px solid #edf1f5;
+}
+
+.department-top{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+}
+
+/* =========================
+   MAP
+========================= */
+
+.map{
+    height:340px;
+    border-radius:12px;
+    background:
+        linear-gradient(90deg,rgba(148,163,184,.18) 1px,transparent 1px),
+        linear-gradient(rgba(148,163,184,.18) 1px,transparent 1px),
+        #eaf2e7;
+    background-size:45px 45px;
+    position:relative;
+    overflow:hidden;
+}
+
+.road{
+    position:absolute;
+    background:#cbd5e1;
+    height:14px;
+    transform:rotate(-20deg);
+    width:120%;
+    top:48%;
+    left:-10%;
+}
+
+.road2{
+    position:absolute;
+    background:#cbd5e1;
+    width:14px;
+    height:120%;
+    transform:rotate(15deg);
+    left:55%;
+    top:-10%;
+}
+
+.map-marker{
+    position:absolute;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    border:3px solid white;
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+    cursor:pointer;
+}
+
+.marker-high{
+    background:#dc2626;
+}
+
+.marker-medium{
+    background:#d97706;
+}
+
+.marker-low{
+    background:#16a34a;
+}
+
+/* =========================
+   TIMELINE
+========================= */
+
+.timeline{
+    position:relative;
+    padding-left:25px;
+}
+
+.timeline:before{
+    content:"";
+    position:absolute;
+    left:7px;
+    top:5px;
+    bottom:5px;
+    width:2px;
+    background:#dbe2ea;
+}
+
+.timeline-item{
+    position:relative;
+    margin-bottom:18px;
+}
+
+.timeline-dot{
+    position:absolute;
+    left:-22px;
+    top:2px;
+    width:12px;
+    height:12px;
+    background:var(--primary);
+    border-radius:50%;
+    border:2px solid white;
+}
+
+.timeline-title{
+    font-size:13px;
+    font-weight:700;
+}
+
+.timeline-time{
+    color:#94a3b8;
+    font-size:11px;
+    margin-top:3px;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:20px;
+}
+
+.modal-box{
+    background:white;
+    width:650px;
+    max-width:100%;
+    max-height:90vh;
+    overflow:auto;
+    border-radius:14px;
+    padding:25px;
+}
+
+.modal-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.close{
+    background:none;
+    border:none;
+    font-size:25px;
+    cursor:pointer;
+}
+
+.detail{
+    padding:12px 0;
+    border-bottom:1px solid #edf1f5;
+}
+
+.detail-label{
+    color:#64748b;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    margin-bottom:4px;
+}
+
+.detail-value{
+    font-size:14px;
+}
+
+.modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+}
+
+/* =========================
+   TOAST
+========================= */
+
+.toast{
+    position:fixed;
+    right:25px;
+    bottom:25px;
+    padding:13px 18px;
+    background:#111827;
+    color:white;
+    border-radius:9px;
+    display:none;
+    z-index:200;
+    box-shadow:0 8px 25px rgba(0,0,0,.2);
+}
+
+/* =========================
+   DARK MODE
+========================= */
+
+body.dark{
+    --bg:#0f172a;
+    --card:#1e293b;
+    --text:#e5e7eb;
+    --muted:#94a3b8;
+    --border:#334155;
+}
+
+body.dark input,
+body.dark select,
+body.dark textarea{
+    background:#172033;
+    color:#e5e7eb;
+    border-color:#475569;
+}
+
+body.dark th{
+    background:#172033;
+}
+
+body.dark .ticket-row:hover{
+    background:#172033;
+}
+
+body.dark .btn-light{
+    background:#1e293b;
+    color:#e5e7eb;
+}
+
+body.dark .file-box{
+    background:#172033;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:1100px){
+
+    .sidebar{
+        width:75px;
+    }
+
+    .logo{
+        font-size:0;
+    }
+
+    .logo span{
+        font-size:20px;
+    }
+
+    .nav-item{
+        text-align:center;
+        font-size:0;
+    }
+
+    .main{
+        margin-left:75px;
+    }
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .grid-2{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:700px){
+
+    .main{
+        padding:15px;
+    }
+
+    .topbar{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .stats{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .form-row{
+        grid-template-columns:1fr;
+    }
+
+    .controls{
+        flex-direction:column;
+    }
+
+    .controls select{
+        width:100%;
+    }
+
+}
+
 </style>
 </head>
+
+
 <body>
 
-<h1>🏛️ Community Grievance Resolution Orchestrator</h1>
-<p class="subtitle">File a civic complaint — it's auto-routed and tracked until resolved.</p>
 
-<div class="container">
+<!-- =====================================================
+     SIDEBAR
+===================================================== -->
 
-  <!-- Submission Form -->
-  <div class="card">
-    <h2>Submit a Complaint</h2>
-    <form id="complaintForm">
-      <label>Complaint Description</label>
-      <textarea id="text" placeholder="e.g. Water leaking on Main Street near the market" required></textarea>
+<aside class="sidebar">
 
-      <label>Category</label>
-      <select id="category">
-        <option value="water">Water</option>
-        <option value="electricity">Electricity</option>
-        <option value="road">Road</option>
-        <option value="sanitation">Sanitation</option>
-        <option value="other">Other</option>
-      </select>
+    <div class="logo">
+        🏛️ Civic<span>Resolve</span>
+    </div>
 
-      <label>Urgency (1 = low, 5 = critical)</label>
-      <input type="number" id="urgency" min="1" max="5" value="3" required>
+    <div class="nav-title">
+        MAIN
+    </div>
 
-      <button type="submit">Submit Complaint</button>
-    </form>
-    <div id="result"></div>
-  </div>
+    <div
+        class="nav-item active"
+        onclick="showPage('dashboard',this)">
+        📊 Dashboard
+    </div>
 
-  <!-- Live Dashboard -->
-  <div class="card">
-    <h2>Live Ticket Dashboard</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th><th>Category</th><th>Priority</th>
-          <th>Department</th><th>Status</th><th>Created</th>
-        </tr>
-      </thead>
-      <tbody id="ticketBody">
-        <tr><td colspan="6">Loading...</td></tr>
-      </tbody>
-    </table>
-  </div>
+    <div
+        class="nav-item"
+        onclick="showPage('complaints',this)">
+        🎫 Complaints
+    </div>
+
+    <div
+        class="nav-item"
+        onclick="showPage('map',this)">
+        🗺️ Complaint Map
+    </div>
+
+    <div
+        class="nav-item"
+        onclick="showPage('analytics',this)">
+        📈 Analytics
+    </div>
+
+    <div class="nav-title">
+        SYSTEM
+    </div>
+
+    <div
+        class="nav-item"
+        onclick="toggleDarkMode()">
+        🌙 Dark Mode
+    </div>
+
+    <div
+        class="nav-item"
+        onclick="resetDemo()">
+        🔄 Reset Demo
+    </div>
+
+</aside>
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="main">
+
+
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
+
+<section
+    id="dashboard"
+    class="page active">
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>
+                Community Grievance Dashboard
+            </h1>
+
+            <div class="subtitle">
+                AI-assisted civic complaint routing and resolution
+            </div>
+
+        </div>
+
+        <div class="actions">
+
+            <button
+                class="btn btn-light"
+                onclick="toggleDarkMode()">
+
+                🌙
+
+            </button>
+
+            <button
+                class="btn btn-light"
+                onclick="exportCSV()">
+
+                📥 Export
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                🎫
+            </div>
+
+            <div class="stat-title">
+                TOTAL COMPLAINTS
+            </div>
+
+            <div
+                class="stat-number"
+                id="totalCount">
+                0
+            </div>
+
+            <div class="stat-description">
+                All registered complaints
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                🔵
+            </div>
+
+            <div class="stat-title">
+                OPEN
+            </div>
+
+            <div
+                class="stat-number"
+                id="openCount">
+                0
+            </div>
+
+            <div class="stat-description">
+                Waiting for action
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                🔴
+            </div>
+
+            <div class="stat-title">
+                HIGH PRIORITY
+            </div>
+
+            <div
+                class="stat-number"
+                id="highCount">
+                0
+            </div>
+
+            <div class="stat-description">
+                Critical attention
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                🟢
+            </div>
+
+            <div class="stat-title">
+                RESOLVED
+            </div>
+
+            <div
+                class="stat-number"
+                id="resolvedCount">
+                0
+            </div>
+
+            <div class="stat-description">
+                Successfully closed
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                🚨
+            </div>
+
+            <div class="stat-title">
+                ESCALATED
+            </div>
+
+            <div
+                class="stat-number"
+                id="escalatedCount">
+                0
+            </div>
+
+            <div class="stat-description">
+                SLA exceeded
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SUBMIT + RECENT -->
+
+    <div class="grid-2">
+
+        <!-- SUBMIT -->
+
+        <div class="card">
+
+            <h2>
+                ➕ Submit Complaint
+            </h2>
+
+            <form id="complaintForm">
+
+                <label>
+                    Complaint Description
+                </label>
+
+                <textarea
+                    id="complaintText"
+                    placeholder="Example: There is a major water leak near the market..."
+                    required>
+                </textarea>
+
+
+                <div class="form-row">
+
+                    <div>
+
+                        <label>
+                            Category
+                        </label>
+
+                        <select id="category">
+
+                            <option value="auto">
+                                🤖 Auto Detect
+                            </option>
+
+                            <option value="water">
+                                💧 Water
+                            </option>
+
+                            <option value="electricity">
+                                ⚡ Electricity
+                            </option>
+
+                            <option value="road">
+                                🛣️ Road
+                            </option>
+
+                            <option value="sanitation">
+                                🗑️ Sanitation
+                            </option>
+
+                            <option value="other">
+                                📌 Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div>
+
+                        <label>
+                            Urgency
+                        </label>
+
+                        <select id="urgency">
+
+                            <option value="1">
+                                1 — Low
+                            </option>
+
+                            <option value="2">
+                                2 — Normal
+                            </option>
+
+                            <option value="3" selected>
+                                3 — Medium
+                            </option>
+
+                            <option value="4">
+                                4 — High
+                            </option>
+
+                            <option value="5">
+                                5 — Critical
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <label>
+                    Location
+                </label>
+
+                <input
+                    id="location"
+                    placeholder="Street / area / landmark"
+                    required>
+
+
+                <label>
+                    Citizen Name
+                </label>
+
+                <input
+                    id="citizen"
+                    placeholder="Your name">
+
+
+                <label>
+                    Contact Number
+                </label>
+
+                <input
+                    id="phone"
+                    placeholder="+91 XXXXX XXXXX">
+
+
+                <label>
+                    Evidence
+                </label>
+
+                <div class="file-box">
+
+                    <input
+                        id="evidence"
+                        type="file"
+                        accept="image/*">
+
+                </div>
+
+
+                <button
+                    class="submit-btn"
+                    type="submit">
+
+                    🚀 Submit & Auto-Route Complaint
+
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <!-- RECENT -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h2>
+                    🕒 Recent Activity
+                </h2>
+
+                <button
+                    class="btn btn-light"
+                    onclick="showPageByName('complaints')">
+
+                    View All
+
+                </button>
+
+            </div>
+
+            <div id="activityList"></div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     COMPLAINTS
+===================================================== -->
+
+<section
+    id="complaints"
+    class="page">
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>
+                Complaint Management
+            </h1>
+
+            <div class="subtitle">
+                Search, filter and manage community complaints
+            </div>
+
+        </div>
+
+        <button
+            class="btn btn-primary"
+            onclick="showPageByName('dashboard')">
+
+            + New Complaint
+
+        </button>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="controls">
+
+            <input
+                id="search"
+                class="search"
+                placeholder="🔎 Search by ID, complaint, citizen, location..."
+                oninput="renderTickets()">
+
+
+            <select
+                id="statusFilter"
+                onchange="renderTickets()">
+
+                <option value="all">
+                    All Status
+                </option>
+
+                <option value="open">
+                    Open
+                </option>
+
+                <option value="in-progress">
+                    In Progress
+                </option>
+
+                <option value="resolved">
+                    Resolved
+                </option>
+
+                <option value="escalated">
+                    Escalated
+                </option>
+
+            </select>
+
+
+            <select
+                id="categoryFilter"
+                onchange="renderTickets()">
+
+                <option value="all">
+                    All Categories
+                </option>
+
+                <option value="water">
+                    Water
+                </option>
+
+                <option value="electricity">
+                    Electricity
+                </option>
+
+                <option value="road">
+                    Road
+                </option>
+
+                <option value="sanitation">
+                    Sanitation
+                </option>
+
+                <option value="other">
+                    Other
+                </option>
+
+            </select>
+
+
+            <select
+                id="priorityFilter"
+                onchange="renderTickets()">
+
+                <option value="all">
+                    All Priority
+                </option>
+
+                <option value="high">
+                    High
+                </option>
+
+                <option value="medium">
+                    Medium
+                </option>
+
+                <option value="low">
+                    Low
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Complaint</th>
+                        <th>Category</th>
+                        <th>Priority</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>SLA</th>
+                        <th>Created</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="ticketBody"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     MAP
+===================================================== -->
+
+<section
+    id="map"
+    class="page">
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>
+                Complaint Map
+            </h1>
+
+            <div class="subtitle">
+                Geographic view of reported civic issues
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="map" id="complaintMap">
+
+            <div class="road"></div>
+
+            <div class="road2"></div>
+
+        </div>
+
+        <div style="margin-top:15px;font-size:12px;color:#64748b">
+
+            🔴 High Priority &nbsp;&nbsp;
+            🟠 Medium Priority &nbsp;&nbsp;
+            🟢 Low Priority
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     ANALYTICS
+===================================================== -->
+
+<section
+    id="analytics"
+    class="page">
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>
+                Analytics & Insights
+            </h1>
+
+            <div class="subtitle">
+                Understand complaint patterns and department workload
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="grid-3">
+
+        <div class="card">
+
+            <h2>
+                📊 Categories
+            </h2>
+
+            <div id="categoryAnalytics"></div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>
+                🏢 Department Workload
+            </h2>
+
+            <div id="departmentAnalytics"></div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>
+                ⚡ System Health
+            </h2>
+
+            <div class="department">
+
+                <div class="department-top">
+
+                    <span>
+                        Routing Engine
+                    </span>
+
+                    <strong>
+                        98%
+                    </strong>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        class="progress-bar"
+                        style="width:98%">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="department">
+
+                <div class="department-top">
+
+                    <span>
+                        SLA Compliance
+                    </span>
+
+                    <strong id="slaRate">
+                        0%
+                    </strong>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        id="slaBar"
+                        class="progress-bar"
+                        style="width:0%">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="department">
+
+                <div class="department-top">
+
+                    <span>
+                        Resolution Rate
+                    </span>
+
+                    <strong id="resolutionRate">
+                        0%
+                    </strong>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        id="resolutionBar"
+                        class="progress-bar"
+                        style="width:0%">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+</main>
+
+
+<!-- =====================================================
+     TICKET MODAL
+===================================================== -->
+
+<div
+    id="ticketModal"
+    class="modal"
+    onclick="closeModal(event)">
+
+    <div
+        class="modal-box"
+        onclick="event.stopPropagation()">
+
+        <div class="modal-header">
+
+            <h2>
+                Ticket Details
+            </h2>
+
+            <button
+                class="close"
+                onclick="hideModal()">
+
+                ×
+
+            </button>
+
+        </div>
+
+        <div id="ticketDetails"></div>
+
+    </div>
 
 </div>
 
+
+<!-- TOAST -->
+
+<div
+    id="toast"
+    class="toast">
+
+    Done
+
+</div>
+
+
 <script>
-const form = document.getElementById('complaintForm');
-const resultDiv = document.getElementById('result');
-const ticketBody = document.getElementById('ticketBody');
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const payload = {
-    text: document.getElementById('text').value,
-    category: document.getElementById('category').value,
-    urgency: parseInt(document.getElementById('urgency').value)
-  };
+/* =====================================================
+   DATABASE
+===================================================== */
 
-  resultDiv.textContent = 'Submitting...';
-  try {
-    const res = await fetch('/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    resultDiv.innerHTML = `✅ Routed to <b>${data.department}</b> — Priority score: <b>${data.priority}</b>`;
-    form.reset();
-    loadTickets();
-  } catch (err) {
-    resultDiv.textContent = '❌ Error submitting complaint.';
-    console.error(err);
-  }
-});
+let tickets =
+JSON.parse(
+    localStorage.getItem("civicTickets") || "[]"
+);
 
-function priorityBadge(score) {
-  score = parseInt(score);
-  if (score >= 15) return `<span class="badge p-high">HIGH (${score})</span>`;
-  if (score >= 8) return `<span class="badge p-med">MEDIUM (${score})</span>`;
-  return `<span class="badge p-low">LOW (${score})</span>`;
-}
+let activities =
+JSON.parse(
+    localStorage.getItem("civicActivities") || "[]"
+);
 
-function statusClass(status) {
-  if (status === 'escalated') return 'status-escalated';
-  if (status === 'resolved') return 'status-resolved';
-  return 'status-open';
-}
 
-async function loadTickets() {
-  try {
-    const res = await fetch('/tickets');
-    const data = await res.json();
-    if (!data.tickets.length) {
-      ticketBody.innerHTML = '<tr><td colspan="6">No tickets yet.</td></tr>';
-      return;
+/* =====================================================
+   DEPARTMENTS
+===================================================== */
+
+const departments = {
+
+    water:
+    "Water Supply Department",
+
+    electricity:
+    "Electricity Department",
+
+    road:
+    "Roads & Infrastructure Department",
+
+    sanitation:
+    "Sanitation Department",
+
+    other:
+    "General Civic Department"
+
+};
+
+
+/* =====================================================
+   AI CLASSIFICATION
+===================================================== */
+
+function classifyComplaint(text){
+
+    const value =
+    text.toLowerCase();
+
+
+    const keywords = {
+
+        water:[
+            "water",
+            "leak",
+            "pipeline",
+            "pipe",
+            "drinking",
+            "tap",
+            "sewage water"
+        ],
+
+        electricity:[
+            "electric",
+            "electricity",
+            "power",
+            "current",
+            "transformer",
+            "wire",
+            "street light",
+            "light"
+        ],
+
+        road:[
+            "road",
+            "pothole",
+            "street",
+            "traffic",
+            "bridge",
+            "footpath",
+            "pavement"
+        ],
+
+        sanitation:[
+            "garbage",
+            "waste",
+            "trash",
+            "drain",
+            "dirty",
+            "sanitation",
+            "dump"
+        ]
+
+    };
+
+
+    let best =
+    "other";
+
+    let highest =
+    0;
+
+
+    for(
+        const category in keywords
+    ){
+
+        let score = 0;
+
+
+        keywords[category].forEach(
+            word => {
+
+                if(
+                    value.includes(word)
+                ){
+
+                    score++;
+
+                }
+
+            }
+        );
+
+
+        if(score > highest){
+
+            highest = score;
+
+            best = category;
+
+        }
+
     }
-    ticketBody.innerHTML = data.tickets.map(t => `
-      <tr>
-        <td>${t[0]}</td>
-        <td>${t[2]}</td>
-        <td>${priorityBadge(t[3])}</td>
-        <td>${t[4]}</td>
-        <td class="${statusClass(t[5])}">${t[5]}</td>
-        <td>${new Date(t[6]).toLocaleString()}</td>
-      </tr>
-    `).join('');
-  } catch (err) {
-    ticketBody.innerHTML = '<tr><td colspan="6">Error loading tickets.</td></tr>';
-    console.error(err);
-  }
+
+
+    return best;
+
 }
 
-loadTickets();
-setInterval(loadTickets, 5000); // poll every 5s for live updates
+
+/* =====================================================
+   PRIORITY ENGINE
+===================================================== */
+
+function calculatePriority(
+    urgency,
+    text
+){
+
+    let score =
+    Number(urgency) * 3;
+
+
+    const value =
+    text.toLowerCase();
+
+
+    const criticalWords = [
+
+        "danger",
+        "fire",
+        "accident",
+        "hospital",
+        "injury",
+        "critical",
+        "emergency",
+        "burst",
+        "flood",
+        "live wire"
+
+    ];
+
+
+    criticalWords.forEach(
+        word => {
+
+            if(value.includes(word)){
+
+                score += 5;
+
+            }
+
+        }
+    );
+
+
+    return Math.min(
+        score,
+        20
+    );
+
+}
+
+
+/* =====================================================
+   SLA
+===================================================== */
+
+function getSLAHours(priority){
+
+    if(priority >= 15)
+        return 2;
+
+    if(priority >= 8)
+        return 12;
+
+    return 48;
+
+}
+
+
+function getPriorityName(score){
+
+    if(score >= 15)
+        return "high";
+
+    if(score >= 8)
+        return "medium";
+
+    return "low";
+
+}
+
+
+/* =====================================================
+   TICKET ID
+===================================================== */
+
+function generateID(){
+
+    const number =
+    1000 + tickets.length + 1;
+
+    return "CG-" + number;
+
+}
+
+
+/* =====================================================
+   SUBMIT
+===================================================== */
+
+document
+.getElementById("complaintForm")
+.addEventListener(
+    "submit",
+    function(event){
+
+        event.preventDefault();
+
+
+        const text =
+        document
+        .getElementById("complaintText")
+        .value
+        .trim();
+
+
+        const selectedCategory =
+        document
+        .getElementById("category")
+        .value;
+
+
+        const urgency =
+        document
+        .getElementById("urgency")
+        .value;
+
+
+        const location =
+        document
+        .getElementById("location")
+        .value
+        .trim();
+
+
+        const citizen =
+        document
+        .getElementById("citizen")
+        .value
+        .trim();
+
+
+        const phone =
+        document
+        .getElementById("phone")
+        .value
+        .trim();
+
+
+        /* AI CATEGORY */
+
+        const category =
+        selectedCategory === "auto"
+        ? classifyComplaint(text)
+        : selectedCategory;
+
+
+        /* PRIORITY */
+
+        const priority =
+        calculatePriority(
+            urgency,
+            text
+        );
+
+
+        const priorityName =
+        getPriorityName(priority);
+
+
+        /* DEPARTMENT */
+
+        const department =
+        departments[category];
+
+
+        /* SLA */
+
+        const slaHours =
+        getSLAHours(priority);
+
+
+        const created =
+        new Date();
+
+
+        const deadline =
+        new Date(
+            created.getTime()
+            +
+            slaHours *
+            60 *
+            60 *
+            1000
+        );
+
+
+        const ticket = {
+
+            id:generateID(),
+
+            text,
+
+            category,
+
+            urgency:Number(urgency),
+
+            priority,
+
+            priorityName,
+
+            department,
+
+            location,
+
+            citizen,
+
+            phone,
+
+            status:"open",
+
+            created:
+            created.toISOString(),
+
+            deadline:
+            deadline.toISOString(),
+
+            timeline:[
+
+                {
+                    title:
+                    "Complaint submitted",
+
+                    time:
+                    created.toISOString()
+                },
+
+                {
+                    title:
+                    `AI classified as ${category}`,
+
+                    time:
+                    created.toISOString()
+                },
+
+                {
+                    title:
+                    `Automatically routed to ${department}`,
+
+                    time:
+                    created.toISOString()
+                }
+
+            ]
+
+        };
+
+
+        tickets.unshift(ticket);
+
+
+        saveData();
+
+
+        addActivity(
+
+            `New ${priorityName} priority complaint ${ticket.id} routed to ${department}.`
+
+        );
+
+
+        event.target.reset();
+
+
+        document
+        .getElementById("urgency")
+        .value = "3";
+
+
+        showToast(
+
+            `Complaint ${ticket.id} successfully routed!`
+
+        );
+
+
+        updateEverything();
+
+    }
+);
+
+
+/* =====================================================
+   STORAGE
+===================================================== */
+
+function saveData(){
+
+    localStorage.setItem(
+        "civicTickets",
+        JSON.stringify(tickets)
+    );
+
+    localStorage.setItem(
+        "civicActivities",
+        JSON.stringify(activities)
+    );
+
+}
+
+
+/* =====================================================
+   ACTIVITIES
+===================================================== */
+
+function addActivity(text){
+
+    activities.unshift({
+
+        text,
+
+        time:
+        new Date().toISOString()
+
+    });
+
+
+    activities =
+    activities.slice(0,20);
+
+
+    saveData();
+
+
+    renderActivities();
+
+}
+
+
+function renderActivities(){
+
+    const container =
+    document.getElementById(
+        "activityList"
+    );
+
+
+    if(!activities.length){
+
+        container.innerHTML =
+        `<p style="color:#64748b">
+            No recent activity.
+        </p>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+    activities
+    .slice(0,8)
+    .map(
+        activity => `
+
+        <div class="activity-item">
+
+            <div class="activity-icon">
+                🔔
+            </div>
+
+            <div>
+
+                <div class="activity-text">
+                    ${escapeHTML(activity.text)}
+                </div>
+
+                <div class="activity-time">
+                    ${timeAgo(activity.time)}
+                </div>
+
+            </div>
+
+        </div>
+
+        `
+    )
+    .join("");
+
+}
+
+
+/* =====================================================
+   DASHBOARD
+===================================================== */
+
+function updateStats(){
+
+    document.getElementById(
+        "totalCount"
+    ).textContent =
+    tickets.length;
+
+
+    document.getElementById(
+        "openCount"
+    ).textContent =
+
+    tickets.filter(
+        t =>
+        t.status === "open"
+        ||
+        t.status === "in-progress"
+    ).length;
+
+
+    document.getElementById(
+        "resolvedCount"
+    ).textContent =
+
+    tickets.filter(
+        t =>
+        t.status === "resolved"
+    ).length;
+
+
+    document.getElementById(
+        "highCount"
+    ).textContent =
+
+    tickets.filter(
+        t =>
+        t.priorityName === "high"
+    ).length;
+
+
+    document.getElementById(
+        "escalatedCount"
+    ).textContent =
+
+    tickets.filter(
+        t =>
+        t.status === "escalated"
+    ).length;
+
+}
+
+
+/* =====================================================
+   RENDER TICKETS
+===================================================== */
+
+function renderTickets(){
+
+    const body =
+    document.getElementById(
+        "ticketBody"
+    );
+
+
+    const search =
+    (
+        document.getElementById(
+            "search"
+        )?.value || ""
+    )
+    .toLowerCase();
+
+
+    const status =
+    document.getElementById(
+        "statusFilter"
+    )?.value || "all";
+
+
+    const category =
+    document.getElementById(
+        "categoryFilter"
+    )?.value || "all";
+
+
+    const priority =
+    document.getElementById(
+        "priorityFilter"
+    )?.value || "all";
+
+
+    const filtered =
+    tickets.filter(ticket => {
+
+        const combined =
+        `
+        ${ticket.id}
+        ${ticket.text}
+        ${ticket.citizen}
+        ${ticket.location}
+        ${ticket.department}
+        `
+        .toLowerCase();
+
+
+        return (
+
+            combined.includes(search)
+
+            &&
+
+            (
+                status === "all"
+                ||
+                ticket.status === status
+            )
+
+            &&
+
+            (
+                category === "all"
+                ||
+                ticket.category === category
+            )
+
+            &&
+
+            (
+                priority === "all"
+                ||
+                ticket.priorityName === priority
+            )
+
+        );
+
+    });
+
+
+    if(!filtered.length){
+
+        body.innerHTML = `
+
+        <tr>
+
+            <td
+                colspan="8"
+                style="text-align:center;padding:40px;color:#64748b">
+
+                No complaints found.
+
+            </td>
+
+        </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    body.innerHTML =
+    filtered
+    .map(
+        ticket => `
+
+        <tr
+            class="ticket-row"
+            onclick="openTicket('${ticket.id}')">
+
+            <td>
+                <strong>
+                    ${ticket.id}
+                </strong>
+            </td>
+
+            <td>
+                ${escapeHTML(
+                    ticket.text.substring(
+                        0,45
+                    )
+                )}
+                ${ticket.text.length > 45 ? "..." : ""}
+            </td>
+
+            <td>
+                ${formatCategory(
+                    ticket.category
+                )}
+            </td>
+
+            <td>
+                ${priorityBadge(
+                    ticket.priority
+                )}
+            </td>
+
+            <td>
+                ${ticket.department}
+            </td>
+
+            <td>
+                ${statusBadge(
+                    ticket.status
+                )}
+            </td>
+
+            <td>
+                ${slaText(ticket)}
+            </td>
+
+            <td>
+                ${formatDate(
+                    ticket.created
+                )}
+            </td>
+
+        </tr>
+
+        `
+    )
+    .join("");
+
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+function statusBadge(status){
+
+    const names = {
+
+        open:"OPEN",
+
+        "in-progress":
+        "IN PROGRESS",
+
+        resolved:
+        "RESOLVED",
+
+        escalated:
+        "ESCALATED"
+
+    };
+
+
+    return `
+
+    <span class="badge badge-${status}">
+        ${names[status] || status}
+    </span>
+
+    `;
+
+}
+
+
+/* =====================================================
+   PRIORITY
+===================================================== */
+
+function priorityBadge(score){
+
+    const name =
+    getPriorityName(score);
+
+
+    return `
+
+    <span class="badge badge-${name}">
+        ${name.toUpperCase()}
+        (${score})
+    </span>
+
+    `;
+
+}
+
+
+/* =====================================================
+   CATEGORY
+===================================================== */
+
+function formatCategory(category){
+
+    const names = {
+
+        water:"💧 Water",
+
+        electricity:
+        "⚡ Electricity",
+
+        road:
+        "🛣️ Road",
+
+        sanitation:
+        "🗑️ Sanitation",
+
+        other:
+        "📌 Other"
+
+    };
+
+
+    return names[category] ||
+    category;
+
+}
+
+
+/* =====================================================
+   SLA
+===================================================== */
+
+function slaText(ticket){
+
+    if(ticket.status === "resolved"){
+
+        return `
+        <span style="color:#16a34a">
+            ✓ Completed
+        </span>
+        `;
+
+    }
+
+
+    const remaining =
+    new Date(ticket.deadline)
+    - new Date();
+
+
+    if(remaining <= 0){
+
+        if(ticket.status !== "escalated"){
+
+            ticket.status =
+            "escalated";
+
+            saveData();
+
+        }
+
+
+        return `
+        <span style="color:#dc2626;font-weight:700">
+            🚨 Escalated
+        </span>
+        `;
+
+    }
+
+
+    const hours =
+    Math.floor(
+        remaining /
+        (1000 * 60 * 60)
+    );
+
+
+    if(hours < 2){
+
+        return `
+        <span style="color:#dc2626">
+            ${hours}h remaining
+        </span>
+        `;
+
+    }
+
+
+    return `
+    <span style="color:#d97706">
+        ${hours}h remaining
+    </span>
+    `;
+
+}
+
+
+/* =====================================================
+   OPEN TICKET
+===================================================== */
+
+function openTicket(id){
+
+    const ticket =
+    tickets.find(
+        t => t.id === id
+    );
+
+
+    if(!ticket)
+        return;
+
+
+    document.getElementById(
+        "ticketDetails"
+    ).innerHTML = `
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Ticket ID
+            </div>
+
+            <div class="detail-value">
+                <strong>
+                    ${ticket.id}
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Complaint
+            </div>
+
+            <div class="detail-value">
+                ${escapeHTML(ticket.text)}
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                AI Classification
+            </div>
+
+            <div class="detail-value">
+                ${formatCategory(ticket.category)}
+                →
+                ${ticket.department}
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Priority
+            </div>
+
+            <div class="detail-value">
+
+                ${priorityBadge(
+                    ticket.priority
+                )}
+
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Citizen
+            </div>
+
+            <div class="detail-value">
+                ${escapeHTML(
+                    ticket.citizen || "Anonymous"
+                )}
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Contact
+            </div>
+
+            <div class="detail-value">
+                ${escapeHTML(
+                    ticket.phone || "Not provided"
+                )}
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Location
+            </div>
+
+            <div class="detail-value">
+                📍 ${escapeHTML(
+                    ticket.location
+                )}
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Status
+            </div>
+
+            <div class="detail-value">
+
+                ${statusBadge(
+                    ticket.status
+                )}
+
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-label">
+                Resolution Timeline
+            </div>
+
+            <div class="timeline">
+
+                ${ticket.timeline
+                .map(
+                    item => `
+
+                    <div class="timeline-item">
+
+                        <div class="timeline-dot">
+                        </div>
+
+                        <div class="timeline-title">
+                            ${escapeHTML(
+                                item.title
+                            )}
+                        </div>
+
+                        <div class="timeline-time">
+                            ${formatDate(
+                                item.time
+                            )}
+                        </div>
+
+                    </div>
+
+                    `
+                )
+                .join("")}
+
+            </div>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+            <button
+                class="btn btn-primary"
+                onclick="updateStatus('${ticket.id}','in-progress')">
+
+                🔧 Start Work
+
+            </button>
+
+
+            <button
+                class="btn"
+                style="background:#16a34a;color:white"
+                onclick="updateStatus('${ticket.id}','resolved')">
+
+                ✓ Resolve
+
+            </button>
+
+
+            <button
+                class="btn"
+                style="background:#fee2e2;color:#b91c1c"
+                onclick="deleteTicket('${ticket.id}')">
+
+                🗑 Delete
+
+            </button>
+
+        </div>
+
+    `;
+
+
+    document.getElementById(
+        "ticketModal"
+    ).style.display =
+    "flex";
+
+}
+
+
+function hideModal(){
+
+    document.getElementById(
+        "ticketModal"
+    ).style.display =
+    "none";
+
+}
+
+
+function closeModal(event){
+
+    if(
+        event.target.id ===
+        "ticketModal"
+    ){
+
+        hideModal();
+
+    }
+
+}
+
+
+/* =====================================================
+   UPDATE STATUS
+===================================================== */
+
+function updateStatus(
+    id,
+    status
+){
+
+    const ticket =
+    tickets.find(
+        t => t.id === id
+    );
+
+
+    if(!ticket)
+        return;
+
+
+    ticket.status =
+    status;
+
+
+    ticket.timeline.push({
+
+        title:
+
+        status === "in-progress"
+
+        ? "Department started investigation"
+
+        : "Complaint resolved",
+
+        time:
+        new Date().toISOString()
+
+    });
+
+
+    addActivity(
+
+        `${id} status changed to ${status}.`
+
+    );
+
+
+    saveData();
+
+
+    hideModal();
+
+
+    updateEverything();
+
+
+    showToast(
+        `${id} updated successfully.`
+    );
+
+}
+
+
+/* =====================================================
+   DELETE
+===================================================== */
+
+function deleteTicket(id){
+
+    if(
+        !confirm(
+            "Delete this complaint?"
+        )
+    )
+        return;
+
+
+    tickets =
+    tickets.filter(
+        t => t.id !== id
+    );
+
+
+    addActivity(
+        `${id} was deleted.`
+    );
+
+
+    saveData();
+
+
+    hideModal();
+
+
+    updateEverything();
+
+
+    showToast(
+        "Complaint deleted."
+    );
+
+}
+
+
+/* =====================================================
+   MAP
+===================================================== */
+
+function renderMap(){
+
+    const map =
+    document.getElementById(
+        "complaintMap"
+    );
+
+
+    if(!map)
+        return;
+
+
+    map
+    .querySelectorAll(
+        ".map-marker"
+    )
+    .forEach(
+        marker =>
+        marker.remove()
+    );
+
+
+    tickets.forEach(
+        (ticket,index) => {
+
+            const marker =
+            document.createElement(
+                "div"
+            );
+
+
+            marker.className =
+            `map-marker marker-${ticket.priorityName}`;
+
+
+            const x =
+            10 +
+            (
+                (index * 37) % 80
+            );
+
+
+            const y =
+            15 +
+            (
+                (index * 53) % 70
+            );
+
+
+            marker.style.left =
+            x + "%";
+
+
+            marker.style.top =
+            y + "%";
+
+
+            marker.title =
+            `${ticket.id} — ${ticket.location}`;
+
+
+            marker.onclick =
+            () => openTicket(ticket.id);
+
+
+            map.appendChild(marker);
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   ANALYTICS
+===================================================== */
+
+function renderAnalytics(){
+
+    const categories =
+    {};
+
+    const departmentCount =
+    {};
+
+
+    tickets.forEach(
+        ticket => {
+
+            categories[
+                ticket.category
+            ] =
+            (
+                categories[
+                    ticket.category
+                ] || 0
+            ) + 1;
+
+
+            departmentCount[
+                ticket.department
+            ] =
+            (
+                departmentCount[
+                    ticket.department
+                ] || 0
+            ) + 1;
+
+        }
+    );
+
+
+    const maxCategory =
+    Math.max(
+        1,
+        ...Object.values(
+            categories
+        )
+    );
+
+
+    document.getElementById(
+        "categoryAnalytics"
+    ).innerHTML =
+
+    Object.entries(categories)
+    .map(
+        ([category,count]) => `
+
+        <div class="department">
+
+            <div class="department-top">
+
+                <span>
+                    ${formatCategory(category)}
+                </span>
+
+                <strong>
+                    ${count}
+                </strong>
+
+            </div>
+
+            <div class="progress">
+
+                <div
+                    class="progress-bar"
+                    style="width:${
+                        count /
+                        maxCategory *
+                        100
+                    }%">
+                </div>
+
+            </div>
+
+        </div>
+
+        `
+    )
+    .join("");
+
+
+    const maxDepartment =
+    Math.max(
+        1,
+        ...Object.values(
+            departmentCount
+        )
+    );
+
+
+    document.getElementById(
+        "departmentAnalytics"
+    ).innerHTML =
+
+    Object.entries(
+        departmentCount
+    )
+    .map(
+        ([department,count]) => `
+
+        <div class="department">
+
+            <div class="department-top">
+
+                <span>
+                    ${department}
+                </span>
+
+                <strong>
+                    ${count}
+                </strong>
+
+            </div>
+
+            <div class="progress">
+
+                <div
+                    class="progress-bar"
+                    style="width:${
+                        count /
+                        maxDepartment *
+                        100
+                    }%">
+                </div>
+
+            </div>
+
+        </div>
+
+        `
+    )
+    .join("");
+
+
+    const resolved =
+    tickets.filter(
+        t =>
+        t.status === "resolved"
+    ).length;
+
+
+    const resolutionRate =
+    tickets.length
+    ? Math.round(
+        resolved /
+        tickets.length *
+        100
+    )
+    : 0;
+
+
+    const onTime =
+    tickets.filter(
+        t =>
+        t.status === "resolved"
+        ||
+        new Date(t.deadline)
+        > new Date()
+    ).length;
+
+
+    const slaRate =
+    tickets.length
+    ? Math.round(
+        onTime /
+        tickets.length *
+        100
+    )
+    : 0;
+
+
+    document.getElementById(
+        "resolutionRate"
+    ).textContent =
+    resolutionRate + "%";
+
+
+    document.getElementById(
+        "resolutionBar"
+    ).style.width =
+    resolutionRate + "%";
+
+
+    document.getElementById(
+        "slaRate"
+    ).textContent =
+    slaRate + "%";
+
+
+    document.getElementById(
+        "slaBar"
+    ).style.width =
+    slaRate + "%";
+
+}
+
+
+/* =====================================================
+   NAVIGATION
+===================================================== */
+
+function showPage(
+    pageName,
+    element
+){
+
+    document
+    .querySelectorAll(".page")
+    .forEach(
+        page =>
+        page.classList.remove(
+            "active"
+        )
+    );
+
+
+    document
+    .getElementById(pageName)
+    .classList.add(
+        "active"
+    );
+
+
+    document
+    .querySelectorAll(
+        ".nav-item"
+    )
+    .forEach(
+        item =>
+        item.classList.remove(
+            "active"
+        )
+    );
+
+
+    if(element)
+        element.classList.add(
+            "active"
+        );
+
+
+    if(pageName === "map")
+        renderMap();
+
+
+    if(pageName === "analytics")
+        renderAnalytics();
+
+}
+
+
+function showPageByName(
+    pageName
+){
+
+    const item =
+    [
+        ...document.querySelectorAll(
+            ".nav-item"
+        )
+    ]
+    .find(
+        item =>
+        item
+        .getAttribute(
+            "onclick"
+        )
+        ?.includes(
+            `'${pageName}'`
+        )
+    );
+
+
+    showPage(
+        pageName,
+        item
+    );
+
+}
+
+
+/* =====================================================
+   DARK MODE
+===================================================== */
+
+function toggleDarkMode(){
+
+    document.body
+    .classList
+    .toggle("dark");
+
+
+    localStorage.setItem(
+        "civicDark",
+        document.body
+        .classList
+        .contains("dark")
+    );
+
+}
+
+
+/* =====================================================
+   CSV EXPORT
+===================================================== */
+
+function exportCSV(){
+
+    if(!tickets.length){
+
+        showToast(
+            "No complaints to export."
+        );
+
+        return;
+
+    }
+
+
+    let csv =
+    "ID,Complaint,Category,Priority,Department,Status,Location,Citizen,Phone,Created\n";
+
+
+    tickets.forEach(
+        ticket => {
+
+            csv += [
+
+                ticket.id,
+
+                ticket.text,
+
+                ticket.category,
+
+                ticket.priority,
+
+                ticket.department,
+
+                ticket.status,
+
+                ticket.location,
+
+                ticket.citizen,
+
+                ticket.phone,
+
+                ticket.created
+
+            ]
+            .map(
+                value =>
+                `"${String(value || "")
+                .replace(/"/g,'""')}"`
+            )
+            .join(",")
+            +
+            "\n";
+
+        }
+    );
+
+
+    const blob =
+    new Blob(
+        [csv],
+        {
+            type:"text/csv"
+        }
+    );
+
+
+    const url =
+    URL.createObjectURL(blob);
+
+
+    const link =
+    document.createElement("a");
+
+
+    link.href =
+    url;
+
+
+    link.download =
+    "civic-grievances.csv";
+
+
+    link.click();
+
+
+    URL.revokeObjectURL(url);
+
+
+    showToast(
+        "CSV exported successfully."
+    );
+
+}
+
+
+/* =====================================================
+   RESET DEMO
+===================================================== */
+
+function resetDemo(){
+
+    if(
+        !confirm(
+            "Reset all demo complaints?"
+        )
+    )
+        return;
+
+
+    tickets = [];
+
+    activities = [];
+
+
+    saveData();
+
+
+    updateEverything();
+
+
+    showToast(
+        "Dashboard reset."
+    );
+
+}
+
+
+/* =====================================================
+   DEMO DATA
+===================================================== */
+
+function createDemoData(){
+
+    if(tickets.length)
+        return;
+
+
+    const examples = [
+
+        {
+            text:
+            "Major water pipeline leaking near the central market",
+
+            category:"water",
+
+            urgency:5,
+
+            location:
+            "Central Market",
+
+            citizen:
+            "Arun",
+
+            phone:
+            "+91 90000 11111"
+
+        },
+
+        {
+            text:
+            "Three street lights are not working on Main Road",
+
+            category:"electricity",
+
+            urgency:3,
+
+            location:
+            "Main Road",
+
+            citizen:
+            "Priya",
+
+            phone:
+            "+91 90000 22222"
+
+        },
+
+        {
+            text:
+            "Large pothole causing accidents near school",
+
+            category:"road",
+
+            urgency:4,
+
+            location:
+            "School Road",
+
+            citizen:
+            "Rahul",
+
+            phone:
+            "+91 90000 33333"
+
+        },
+
+        {
+            text:
+            "Garbage has not been collected for five days",
+
+            category:"sanitation",
+
+            urgency:3,
+
+            location:
+            "Lake View",
+
+            citizen:
+            "Meena",
+
+            phone:
+            "+91 90000 44444"
+
+        }
+
+    ];
+
+
+    examples.forEach(
+        example => {
+
+            const priority =
+            calculatePriority(
+                example.urgency,
+                example.text
+            );
+
+
+            const created =
+            new Date(
+                Date.now()
+                -
+                Math.random()
+                *
+                3 *
+                24 *
+                60 *
+                60 *
+                1000
+            );
+
+
+            const ticket = {
+
+                id:generateID(),
+
+                text:
+                example.text,
+
+                category:
+                example.category,
+
+                urgency:
+                example.urgency,
+
+                priority,
+
+                priorityName:
+                getPriorityName(
+                    priority
+                ),
+
+                department:
+                departments[
+                    example.category
+                ],
+
+                location:
+                example.location,
+
+                citizen:
+                example.citizen,
+
+                phone:
+                example.phone,
+
+                status:
+                "open",
+
+                created:
+                created.toISOString(),
+
+                deadline:
+                new Date(
+                    created.getTime()
+                    +
+                    getSLAHours(priority)
+                    *
+                    60 *
+                    60 *
+                    1000
+                ).toISOString(),
+
+                timeline:[
+
+                    {
+                        title:
+                        "Complaint submitted",
+
+                        time:
+                        created.toISOString()
+                    },
+
+                    {
+                        title:
+                        `AI classified as ${example.category}`,
+
+                        time:
+                        created.toISOString()
+                    },
+
+                    {
+                        title:
+                        `Routed to ${departments[example.category]}`,
+
+                        time:
+                        created.toISOString()
+                    }
+
+                ]
+
+            };
+
+
+            tickets.push(ticket);
+
+        }
+    );
+
+
+    activities = [
+
+        {
+            text:
+            "AI routing engine initialized.",
+
+            time:
+            new Date().toISOString()
+
+        },
+
+        {
+            text:
+            "Demo complaints loaded.",
+
+            time:
+            new Date().toISOString()
+
+        }
+
+    ];
+
+
+    saveData();
+
+}
+
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function formatDate(date){
+
+    return new Date(date)
+    .toLocaleString(
+        [],
+        {
+            dateStyle:"short",
+            timeStyle:"short"
+        }
+    );
+
+}
+
+
+function timeAgo(date){
+
+    const seconds =
+    Math.floor(
+        (
+            new Date()
+            -
+            new Date(date)
+        ) / 1000
+    );
+
+
+    if(seconds < 60)
+        return "just now";
+
+
+    const minutes =
+    Math.floor(
+        seconds / 60
+    );
+
+
+    if(minutes < 60)
+        return minutes + " min ago";
+
+
+    const hours =
+    Math.floor(
+        minutes / 60
+    );
+
+
+    if(hours < 24)
+        return hours + " hr ago";
+
+
+    return Math.floor(
+        hours / 24
+    ) + " days ago";
+
+}
+
+
+function escapeHTML(value){
+
+    return String(value || "")
+    .replace(
+        /[&<>"']/g,
+        character => ({
+
+            "&":"&amp;",
+            "<":"&lt;",
+            ">":"&gt;",
+            '"':"&quot;",
+            "'":"&#039;"
+
+        })[character]
+    );
+
+}
+
+
+function showToast(message){
+
+    const toast =
+    document.getElementById(
+        "toast"
+    );
+
+
+    toast.textContent =
+    message;
+
+
+    toast.style.display =
+    "block";
+
+
+    setTimeout(
+        () => {
+
+            toast.style.display =
+            "none";
+
+        },
+        3000
+    );
+
+}
+
+
+/* =====================================================
+   UPDATE EVERYTHING
+===================================================== */
+
+function updateEverything(){
+
+    updateStats();
+
+    renderTickets();
+
+    renderActivities();
+
+    renderAnalytics();
+
+    renderMap();
+
+}
+
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+if(
+    localStorage.getItem(
+        "civicDark"
+    ) === "true"
+){
+
+    document.body
+    .classList
+    .add("dark");
+
+}
+
+
+/*
+   Automatically create demo
+   complaints on first launch.
+*/
+
+createDemoData();
+
+
+updateEverything();
+
+
+/*
+   Check SLA every 30 seconds.
+*/
+
+setInterval(
+    () => {
+
+        tickets.forEach(
+            ticket => {
+
+                if(
+                    ticket.status !==
+                    "resolved"
+                    &&
+                    new Date(
+                        ticket.deadline
+                    ) < new Date()
+                ){
+
+                    if(
+                        ticket.status !==
+                        "escalated"
+                    ){
+
+                        ticket.status =
+                        "escalated";
+
+
+                        ticket.timeline.push({
+
+                            title:
+                            "SLA exceeded — automatically escalated",
+
+                            time:
+                            new Date()
+                            .toISOString()
+
+                        });
+
+
+                        addActivity(
+                            `🚨 ${ticket.id} automatically escalated because its SLA expired.`
+                        );
+
+                    }
+
+                }
+
+            }
+        );
+
+
+        saveData();
+
+        updateEverything();
+
+    },
+    30000
+);
+
 </script>
 
 </body>
