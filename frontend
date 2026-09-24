@@ -2,578 +2,1786 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Civic Resolve</title>
+
 <style>
-  :root {
-    --bg: #eef2f0; --surface: #ffffff; --ink: #14231f; --muted: #5b6b66;
-    --line: #dbe3df; --brand: #0f5c4d; --brand-ink: #ffffff; --brand-soft: #dff0ea;
-    --high: #b3261e; --med: #b76e00; --low: #2e7d4f;
-    --high-bg: #fbe4e2; --med-bg: #fdf0d5; --low-bg: #e1f2e7;
-    --focus: #1a73e8;
-  }
-  :root:not([data-theme="light"]) { color-scheme: light dark; }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0e1715; --surface: #16221f; --ink: #e6efec; --muted: #93a6a0;
-      --line: #263631; --brand: #3fb59b; --brand-ink: #062119; --brand-soft: #1b3a33;
-      --high: #ff8a80; --med: #f2b34a; --low: #6fcf97;
-      --high-bg: #3a1f1d; --med-bg: #3a2c12; --low-bg: #173324;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  }
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 20px 48px; }
-  header { margin-bottom: 20px; }
-  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
-  h2 { font-size: 17px; margin: 0 0 14px; }
-  .subtitle { color: var(--muted); margin: 0; max-width: 60ch; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
 
-  .layout { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 20px; align-items: start; }
-  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
-  .form-card { position: sticky; top: 16px; }
-  @media (max-width: 860px) { .form-card { position: static; } }
+body {
+    background: #f4f7fb;
+    color: #1f2937;
+}
 
-  label, legend { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 6px; padding: 0; }
-  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-  input, select, textarea {
-    width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px;
-    background: var(--bg); color: var(--ink); font: inherit;
-  }
-  textarea { resize: vertical; min-height: 96px; }
-  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  .hint { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-  .urgency { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-  .urgency input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .urgency label {
-    margin: 0; text-align: center; padding: 8px 0; border: 1px solid var(--line);
-    border-radius: 6px; cursor: pointer; font-weight: 600; background: var(--bg);
-  }
-  .urgency input:checked + label { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
-  .urgency input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 2px; }
-  .scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-  .btn {
-    width: 100%; margin-top: 20px; padding: 11px 16px; background: var(--brand); color: var(--brand-ink);
-    border: 0; border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer;
-  }
-  .btn:hover:not(:disabled) { filter: brightness(1.08); }
-  .btn:disabled { opacity: .6; cursor: progress; }
-
-  #result { margin-top: 14px; font-size: 14px; }
-  .msg { padding: 10px 12px; border-radius: 6px; }
-  .msg.ok { background: var(--low-bg); color: var(--low); }
-  .msg.err { background: var(--high-bg); color: var(--high); }
-  .msg.info { background: var(--brand-soft); color: var(--brand); }
-
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-  @media (max-width: 520px) { .stats { grid-template-columns: repeat(2, 1fr); } }
-  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
-  .stat b { display: block; font-size: 22px; line-height: 1.2; }
-  .stat span { font-size: 12px; color: var(--muted); }
-
-  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip {
-    padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent;
-    color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;
-  }
-  .chip[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
-  .search { flex: 1; min-width: 160px; }
-  .search input { padding: 7px 10px; }
-
-  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  tbody tr:last-child td { border-bottom: 0; }
-  th { background: var(--bg); font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; }
-  td.id { font-variant-numeric: tabular-nums; color: var(--muted); }
-  .desc { max-width: 34ch; overflow-wrap: anywhere; }
-  .cat { display: block; font-size: 12px; color: var(--muted); text-transform: capitalize; }
-  .center { text-align: center; color: var(--muted); padding: 28px 12px; }
-  tr.new { animation: flash 2.4s ease-out; }
-  @keyframes flash { from { background: var(--brand-soft); } to { background: transparent; } }
-
-  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .p-high { background: var(--high-bg); color: var(--high); }
-  .p-med { background: var(--med-bg); color: var(--med); }
-  .p-low { background: var(--low-bg); color: var(--low); }
-  .status { font-weight: 600; text-transform: capitalize; white-space: nowrap; }
-  .status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: currentColor; }
-  .status-open { color: var(--med); }
-  .status-resolved { color: var(--low); }
-  .status-escalated { color: var(--high); }
-
-  .updated { font-size: 12px; color: var(--muted); margin-top: 8px; text-align: right; }
-  @media (prefers-reduced-motion: reduce) { tr.new { animation: none; } }
-
-  .map-section { margin-top: 20px; }
-  #complaintMap {
-    width: 100%;
-    height: 460px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--bg);
-  }
-  .location-row {
+/* HEADER */
+header {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    padding: 22px 6%;
     display: flex;
-    gap: 8px;
+    justify-content: space-between;
     align-items: center;
-    margin-top: 8px;
-  }
-  .location-row .btn-secondary {
-    width: auto;
-    margin-top: 0;
-    padding: 9px 12px;
-    background: transparent;
-    color: var(--ink);
-    border: 1px solid var(--line);
-  }
-  .location-status {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 5px;
-  }
-  .map-note {
-    font-size: 12px;
-    color: var(--muted);
-    margin: -6px 0 10px;
-  }
+}
 
+.logo {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.tagline {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* MAIN */
+.container {
+    width: 92%;
+    max-width: 1400px;
+    margin: 30px auto;
+}
+
+/* CARDS */
+.card {
+    background: white;
+    border-radius: 14px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.07);
+}
+
+.card h2 {
+    margin-bottom: 20px;
+    color: #1e3a8a;
+}
+
+/* FORM */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+input,
+select,
+textarea {
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #2563eb;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+/* BUTTONS */
+button {
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.primary-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.primary-btn:hover {
+    background: #1d4ed8;
+}
+
+.secondary-btn {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.location-btn {
+    background: #059669;
+    color: white;
+    margin-top: 5px;
+}
+
+.location-btn:hover {
+    background: #047857;
+}
+
+.submit-area {
+    margin-top: 22px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.status-message {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* DASHBOARD STATS */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+}
+
+.stat-title {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* FILTERS */
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.filter-btn {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.filter-btn.active {
+    background: #2563eb;
+    color: white;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 220px;
+}
+
+/* TABLE */
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+th,
+td {
+    padding: 13px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+th {
+    background: #f8fafc;
+    color: #374151;
+}
+
+tr:hover {
+    background: #f8fafc;
+}
+
+/* BADGES */
+.badge {
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.open {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.escalated {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.resolved {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* MAP */
+#map {
+    width: 100%;
+    height: 450px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* EMPTY */
+.empty {
+    text-align: center;
+    padding: 30px;
+    color: #6b7280;
+}
+
+/* FILE */
+.file-info {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* LOCATION */
+.location-display {
+    background: #f0fdf4;
+    padding: 10px;
+    border-radius: 8px;
+    color: #166534;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #6b7280;
+}
+
+/* RESPONSIVE */
+@media (max-width: 800px) {
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-group.full {
+        grid-column: auto;
+    }
+
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+@media (max-width: 500px) {
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        width: 95%;
+    }
+}
 </style>
 </head>
+
 <body>
-<div class="wrap">
 
-  <header>
-    <h1>Civic Resolve</h1>
-    <p class="subtitle">Report a civic problem. It is routed to the right department and tracked until it is resolved.</p>
-  </header>
+<header>
+    <div>
+        <div class="logo">🏛️ Civic Resolve</div>
+        <div class="tagline">Smart Community Grievance Resolution Platform</div>
+    </div>
+</header>
 
-  <div class="layout">
 
-    <!-- Submission form -->
-    <section class="card form-card" aria-labelledby="formTitle">
-      <h2 id="formTitle">Report a problem</h2>
-      <form id="complaintForm" novalidate>
-        <label for="category">Category</label>
-        <select id="category">
-          <option value="water">Water</option>
-          <option value="electricity">Electricity</option>
-          <option value="road">Road</option>
-          <option value="sanitation">Sanitation</option>
-          <option value="other">Other</option>
-        </select>
+<div class="container">
 
-        <div id="otherCategoryWrap" hidden>
-          <label for="otherCategory">Mention the type of problem</label>
-          <input type="text" id="otherCategory" maxlength="100"
-                 placeholder="Enter the type of problem">
+    <!-- COMPLAINT FORM -->
+    <div class="card">
+
+        <h2>Submit a Complaint</h2>
+
+        <form id="complaintForm">
+
+            <div class="form-grid">
+
+                <!-- CATEGORY -->
+                <div class="form-group">
+                    <label for="category">Category</label>
+
+                    <select id="category" required>
+                        <option value="">Select category</option>
+                        <option value="Water">Water</option>
+                        <option value="Electricity">Electricity</option>
+                        <option value="Road">Road</option>
+                        <option value="Sanitation">Sanitation</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+
+                <!-- CUSTOM CATEGORY -->
+                <div class="form-group" id="customCategoryGroup" style="display:none;">
+
+                    <label for="customCategory">
+                        Mention the type of problem
+                    </label>
+
+                    <input
+                        type="text"
+                        id="customCategory"
+                        placeholder="Example: Street light"
+                    >
+
+                </div>
+
+
+                <!-- URGENCY -->
+                <div class="form-group">
+
+                    <label for="urgency">
+                        How urgent is it?
+                    </label>
+
+                    <select id="urgency" required>
+                        <option value="">Select urgency</option>
+                        <option value="1">1 - Low</option>
+                        <option value="2">2 - Slightly Low</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - High</option>
+                        <option value="5">5 - Critical</option>
+                    </select>
+
+                </div>
+
+
+                <!-- PROBLEM -->
+                <div class="form-group full">
+
+                    <label for="description">
+                        What is the problem?
+                    </label>
+
+                    <textarea
+                        id="description"
+                        maxlength="500"
+                        placeholder="Describe your problem clearly..."
+                        required
+                    ></textarea>
+
+                    <div class="char-counter">
+                        <span id="charCount">0</span>/500
+                    </div>
+
+                </div>
+
+
+                <!-- CONTACT -->
+                <div class="form-group">
+
+                    <label for="contact">
+                        Contact Number
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="contact"
+                        maxlength="10"
+                        pattern="[0-9]{10}"
+                        placeholder="Enter 10-digit number"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- FILE -->
+                <div class="form-group">
+
+                    <label for="file">
+                        Choose File
+                    </label>
+
+                    <input
+                        type="file"
+                        id="file"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
+                    >
+
+                    <div class="file-info" id="fileInfo">
+                        Maximum file size: 10 MB
+                    </div>
+
+                </div>
+
+
+                <!-- LOCATION -->
+                <div class="form-group full">
+
+                    <label>
+                        Location
+                    </label>
+
+                    <button
+                        type="button"
+                        class="location-btn"
+                        id="locationBtn"
+                    >
+                        📍 Use My Current Location
+                    </button>
+
+                    <div
+                        id="locationDisplay"
+                        class="location-display"
+                        style="display:none;"
+                    ></div>
+
+                </div>
+
+            </div>
+
+
+            <div class="submit-area">
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                >
+                    Submit Complaint
+                </button>
+
+                <span
+                    id="statusMessage"
+                    class="status-message"
+                ></span>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- STATISTICS -->
+    <div class="stats">
+
+        <div class="stat">
+            <div class="stat-title">Total Complaints</div>
+            <div class="stat-value" id="totalCount">0</div>
         </div>
 
-        <fieldset>
-          <legend>How urgent is it?</legend>
-          <div class="urgency" id="urgency">
-            <input type="radio" name="urgency" id="u1" value="1"><label for="u1">1</label>
-            <input type="radio" name="urgency" id="u2" value="2"><label for="u2">2</label>
-            <input type="radio" name="urgency" id="u3" value="3" checked><label for="u3">3</label>
-            <input type="radio" name="urgency" id="u4" value="4"><label for="u4">4</label>
-            <input type="radio" name="urgency" id="u5" value="5"><label for="u5">5</label>
-          </div>
-          <div class="scale"><span>Can wait</span><span>Critical</span></div>
-        </fieldset>
-
-
-
-
-        <label for="text" style="margin-top:0">What is the problem?</label>
-        <textarea id="text" maxlength="500" required
-          placeholder="e.g. Water leaking on Main Street near the market"></textarea>
-        <div class="hint"><span id="textError" role="alert"></span><span id="counter">0 / 500</span></div>
-
-        <label for="contactNumber">Contact number</label>
-        <input type="tel" id="contactNumber" name="contactNumber" inputmode="numeric"
-               autocomplete="tel" maxlength="10" pattern="[0-9]{10}"
-               placeholder="e.g. 9876543210" required>
-        <div class="hint"><span id="contactError" role="alert"></span><span>10 digits</span></div>
-
-        <label for="attachment">Choose file</label>
-        <input type="file" id="attachment" name="attachment"
-               accept="image/*,.pdf,.doc,.docx">
-        <div class="hint"><span id="fileError" role="alert"></span><span>Optional</span></div>
-
-        <label>Complaint location</label>
-        <div class="location-row">
-          <button type="button" class="btn btn-secondary" id="getLocationBtn">
-            Use my current location
-          </button>
-        </div>
-        <div class="location-status" id="locationStatus">
-          Location is optional. You can tag the complaint on the map.
+        <div class="stat">
+            <div class="stat-title">Open</div>
+            <div class="stat-value" id="openCount">0</div>
         </div>
 
-        <button type="submit" class="btn" id="submitBtn">Submit complaint</button>
-      </form>
-      <div id="result" aria-live="polite"></div>
-    </section>
-
-    <!-- Dashboard -->
-    <section class="card" aria-labelledby="dashTitle">
-      <h2 id="dashTitle">Ticket dashboard</h2>
-
-      <div class="stats" id="stats"></div>
-
-      <div class="toolbar">
-        <div class="chips" id="chips" role="group" aria-label="Filter by status"></div>
-        <div class="search">
-          <input type="search" id="search" placeholder="Search tickets" aria-label="Search tickets">
+        <div class="stat">
+            <div class="stat-title">Escalated</div>
+            <div class="stat-value" id="escalatedCount">0</div>
         </div>
-      </div>
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Complaint</th><th>Priority</th><th>Department</th><th>Status</th><th>Filed</th></tr>
-          </thead>
-          <tbody id="ticketBody"><tr><td colspan="6" class="center">Loading tickets…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="updated" id="updated" aria-live="off"></div>
+        <div class="stat">
+            <div class="stat-title">Resolved</div>
+            <div class="stat-value" id="resolvedCount">0</div>
+        </div>
 
-      <section class="map-section" aria-labelledby="mapTitle">
-        <h2 id="mapTitle">Complaints map</h2>
-        <p class="map-note">Geotagged complaints are shown on the map. Click a marker to view the complaint.</p>
-        <div id="complaintMap" aria-label="Map showing geotagged complaints"></div>
-      </section>
-    </section>
+    </div>
 
-  </div>
+
+    <!-- MAP -->
+    <div class="card">
+
+        <h2>📍 Complaint Map</h2>
+
+        <div id="map"></div>
+
+    </div>
+
+
+    <!-- DASHBOARD -->
+    <div class="card">
+
+        <h2>Complaint Dashboard</h2>
+
+
+        <div class="controls">
+
+            <button
+                class="filter-btn active"
+                data-filter="All"
+            >
+                All
+            </button>
+
+            <button
+                class="filter-btn"
+                data-filter="Open"
+            >
+                Open
+            </button>
+
+            <button
+                class="filter-btn"
+                data-filter="Escalated"
+            >
+                Escalated
+            </button>
+
+            <button
+                class="filter-btn"
+                data-filter="Resolved"
+            >
+                Resolved
+            </button>
+
+            <input
+                class="search-box"
+                type="text"
+                id="search"
+                placeholder="🔍 Search complaints..."
+            >
+
+        </div>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Category</th>
+                        <th>Problem</th>
+                        <th>Urgency</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="complaintTable">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
 </div>
 
 
-<!-- Replace YOUR_GOOGLE_MAPS_API_KEY with your Google Maps JavaScript API key.
-     Enable Maps JavaScript API in Google Cloud before deploying. -->
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initComplaintMap" async defer></script>
+<footer>
+    Civic Resolve © 2026 | Hackathon Prototype
+</footer>
+
 
 <script>
-let complaintMap = null;
-let complaintMarkers = [];
-let selectedLocation = null;
 
-function initComplaintMap() {
-  const defaultCenter = { lat: 11.3410, lng: 77.7172 }; // Erode fallback
-  complaintMap = new google.maps.Map(document.getElementById("complaintMap"), {
-    center: defaultCenter,
-    zoom: 12,
-    mapTypeControl: false,
-    streetViewControl: false,
-    fullscreenControl: true
-  });
-  renderMapMarkers();
-}
-
-function clearMapMarkers() {
-  complaintMarkers.forEach(marker => marker.setMap(null));
-  complaintMarkers = [];
-}
-
-function renderMapMarkers() {
-  if (!complaintMap || !window.google?.maps) return;
-  clearMapMarkers();
-  const geotagged = tickets.filter(t => Number.isFinite(t.lat) && Number.isFinite(t.lng));
-  geotagged.forEach(t => {
-    const marker = new google.maps.Marker({
-      position: { lat: t.lat, lng: t.lng },
-      map: complaintMap,
-      title: `Complaint #${t.id}`
-    });
-    const info = new google.maps.InfoWindow({
-      content: `<div style="max-width:260px"><b>Complaint #${esc(t.id)}</b><br>${esc(t.text)}<br><small>${esc(t.category)} · ${esc(t.status)} · ${esc(t.department)}</small></div>`
-    });
-    marker.addListener("click", () => info.open({ map: complaintMap, anchor: marker }));
-    complaintMarkers.push(marker);
-  });
-
-  if (geotagged.length) {
-    const bounds = new google.maps.LatLngBounds();
-    geotagged.forEach(t => bounds.extend({ lat: t.lat, lng: t.lng }));
-    complaintMap.fitBounds(bounds);
-    if (geotagged.length === 1) complaintMap.setZoom(15);
-  }
-}
-
-const $ = (id) => document.getElementById(id);
-const form = $('complaintForm'), textEl = $('text'), resultDiv = $('result');
-const submitBtn = $('submitBtn'), ticketBody = $('ticketBody');
-const getLocationBtn = $('getLocationBtn'), locationStatus = $('locationStatus');
-const contactEl = $('contactNumber'), attachmentEl = $('attachment');
-const categoryEl = $('category'), otherCategoryWrap = $('otherCategoryWrap'),
-      otherCategoryEl = $('otherCategory');
-
-const STATUSES = ['all', 'open', 'escalated', 'resolved'];
-let tickets = [];          // normalized ticket objects
-let filter = 'all';
-let query = '';
-let lastSnapshot = '';
-let knownIds = null;       // null until first load, so existing rows don't flash
-
-/* ---------- helpers ---------- */
-function esc(v) {          // prevents user-entered text from injecting HTML
-  return String(v ?? '').replace(/[&<>"']/g, c => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-async function api(url, options = {}) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
-  try {
-    const res = await fetch(url, { ...options, signal: ctrl.signal });
-    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-    return await res.json();
-  } finally { clearTimeout(timer); }
-}
-
-function timeAgo(dateStr) {
-  const d = new Date(dateStr);
-  if (isNaN(d)) return esc(dateStr);
-  const secs = Math.round((d - Date.now()) / 1000);
-  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
-  const units = [['day', 86400], ['hour', 3600], ['minute', 60]];
-  for (const [unit, s] of units) {
-    if (Math.abs(secs) >= s) return `<time datetime="${esc(d.toISOString())}" title="${esc(d.toLocaleString())}">${rtf.format(Math.round(secs / s), unit)}</time>`;
-  }
-  return `<time datetime="${esc(d.toISOString())}" title="${esc(d.toLocaleString())}">just now</time>`;
-}
-
-function priorityBadge(score) {
-  score = parseInt(score, 10) || 0;
-  if (score >= 15) return `<span class="badge p-high">High (${score})</span>`;
-  if (score >= 8)  return `<span class="badge p-med">Medium (${score})</span>`;
-  return `<span class="badge p-low">Low (${score})</span>`;
-}
-
-function statusClass(s) {
-  return s === 'escalated' ? 'status-escalated' : s === 'resolved' ? 'status-resolved' : 'status-open';
-}
-
-function showResult(kind, html) { resultDiv.innerHTML = `<div class="msg ${kind}">${html}</div>`; }
-
-/* ---------- form ---------- */
-textEl.addEventListener('input', () => {
-  $('counter').textContent = `${textEl.value.length} / 500`;
-  $('textError').textContent = '';
-});
-contactEl.addEventListener('input', () => {
-  contactEl.value = contactEl.value.replace(/\D/g, '').slice(0, 10);
-  $('contactError').textContent = '';
-});
-attachmentEl.addEventListener('change', () => {
-  $('fileError').textContent = '';
-});
+/* =========================================================
+   CIVIC RESOLVE
+   ========================================================= */
 
 
+/* GOOGLE MAP */
+let map = null;
+let mapMarkers = [];
 
-categoryEl.addEventListener('change', () => {
-  const isOther = categoryEl.value === 'other';
-  otherCategoryWrap.hidden = !isOther;
-  otherCategoryEl.required = isOther;
-  if (!isOther) otherCategoryEl.value = '';
-});
 
-getLocationBtn.addEventListener('click', () => {
-  if (!navigator.geolocation) {
-    locationStatus.textContent = 'Geolocation is not supported by this browser.';
-    return;
-  }
+/* CURRENT LOCATION */
+let currentLocation = null;
 
-  getLocationBtn.disabled = true;
-  getLocationBtn.textContent = 'Getting location…';
-  locationStatus.textContent = 'Requesting your location permission…';
 
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      selectedLocation = {
-        lat: Number(position.coords.latitude.toFixed(6)),
-        lng: Number(position.coords.longitude.toFixed(6))
-      };
-      locationStatus.textContent =
-        `Location tagged: ${selectedLocation.lat}, ${selectedLocation.lng}`;
-      getLocationBtn.disabled = false;
-      getLocationBtn.textContent = 'Update my location';
+/* ACTIVE FILTER */
+let activeFilter = "All";
 
-      if (complaintMap) {
-        complaintMap.setCenter(selectedLocation);
-        complaintMap.setZoom(16);
-      }
-    },
-    (error) => {
-      const message = error.code === 1
-        ? 'Location permission was denied.'
-        : 'Could not get your location. Try again.';
-      locationStatus.textContent = message;
-      getLocationBtn.disabled = false;
-      getLocationBtn.textContent = 'Use my current location';
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
-  );
-});
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const text = textEl.value.trim();
-  if (!text) {
-    $('textError').textContent = 'Describe the problem before submitting.';
-    textEl.focus();
-    return;
-  }
-  const contact = contactEl.value.trim();
-  const customCategory = otherCategoryEl.value.trim();
+/* STORAGE KEY */
+const STORAGE_KEY = "civicResolveComplaints";
 
-  $('contactError').textContent = '';
-  if (categoryEl.value === 'other' && !customCategory) {
-    otherCategoryEl.focus();
-    return;
-  }
-  $('fileError').textContent = '';
 
-  if (!/^\d{10}$/.test(contact)) {
-    $('contactError').textContent = 'Enter a valid 10-digit contact number.';
-    contactEl.focus();
-    return;
-  }
+/* =========================================================
+   GOOGLE MAP INITIALIZATION
+   ========================================================= */
 
-  const file = attachmentEl.files[0];
-  if (file && file.size > 10 * 1024 * 1024) {
-    $('fileError').textContent = 'File must be 10 MB or smaller.';
-    attachmentEl.focus();
-    return;
-  }
+async function initMap() {
 
-  const formData = new FormData();
-  formData.append('text', text);
-  formData.append('category', categoryEl.value);
-  formData.append('other_category', categoryEl.value === 'other' ? customCategory : '');
-  formData.append('urgency', form.elements.urgency.value);
-  formData.append('contact_number', contact);
-  formData.append('latitude', selectedLocation?.lat ?? '');
-  formData.append('longitude', selectedLocation?.lng ?? '');
-  if (file) formData.append('attachment', file);
+    try {
 
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Submitting…';
-  showResult('info', 'Submitting your complaint…');
-  try {
-    const data = await api('/submit', {
-      method: 'POST',
-      body: formData
-    });
-    showResult('ok', `Complaint submitted. Routed to <b>${esc(data.department)}</b> with priority score <b>${esc(data.priority)}</b>.`);
-    form.reset();
-    otherCategoryWrap.hidden = true;
-    otherCategoryEl.required = false;
-    $('counter').textContent = '0 / 500';
-    $('contactError').textContent = '';
-    $('fileError').textContent = '';
-    selectedLocation = null;
-    locationStatus.textContent = 'Location is optional. You can tag the complaint on the map.';
-    loadTickets();
-  } catch (err) {
-    console.error(err);
-    showResult('err', 'Your complaint was not submitted. Check your connection and try again.');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit complaint';
-  }
-});
+        const { Map } =
+            await google.maps.importLibrary("maps");
 
-/* ---------- dashboard ---------- */
-function renderChips() {
-  const counts = { all: tickets.length };
-  STATUSES.slice(1).forEach(s => counts[s] = tickets.filter(t => t.status === s).length);
-  $('chips').innerHTML = STATUSES.map(s =>
-    `<button type="button" class="chip" data-f="${s}" aria-pressed="${filter === s}">${s[0].toUpperCase() + s.slice(1)} (${counts[s]})</button>`
-  ).join('');
-  $('stats').innerHTML = [
-    ['Total', counts.all], ['Open', counts.open], ['Escalated', counts.escalated], ['Resolved', counts.resolved]
-  ].map(([l, n]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
-}
+        map = new Map(
+            document.getElementById("map"),
+            {
+                center: {
+                    lat: 11.3410,
+                    lng: 77.7172
+                },
 
-function renderTable() {
-  const q = query.toLowerCase();
-  const rows = tickets.filter(t =>
-    (filter === 'all' || t.status === filter) &&
-    (!q || [t.id, t.text, t.category, t.department].join(' ').toLowerCase().includes(q))
-  );
+                zoom: 7,
 
-  if (!tickets.length) {
-    ticketBody.innerHTML = '<tr><td colspan="6" class="center">No tickets yet. Submit the first complaint using the form.</td></tr>';
-    return;
-  }
-  if (!rows.length) {
-    ticketBody.innerHTML = '<tr><td colspan="6" class="center">No tickets match this filter.</td></tr>';
-    return;
-  }
-  ticketBody.innerHTML = rows.map(t => `
-    <tr class="${knownIds && !knownIds.has(t.id) ? 'new' : ''}">
-      <td class="id">#${esc(t.id)}</td>
-      <td class="desc">${esc(t.text) || '<span class="cat">No description</span>'}<span class="cat">${esc(t.category)}</span></td>
-      <td>${priorityBadge(t.priority)}</td>
-      <td>${esc(t.department)}</td>
-      <td><span class="status ${statusClass(t.status)}">${esc(t.status)}</span></td>
-      <td>${timeAgo(t.created)}</td>
-    </tr>`).join('');
-}
+                mapTypeControl: true,
 
-async function loadTickets() {
-  try {
-    const data = await api('/tickets');
-    const snapshot = JSON.stringify(data.tickets);
-    // Row layout from the API: [id, text, category, priority, department, status, created, latitude, longitude]
-    if (snapshot !== lastSnapshot) {
-      lastSnapshot = snapshot;
-      tickets = data.tickets.map(t => ({
-        id: t[0], text: t[1], category: t[2], priority: t[3],
-        department: t[4], status: String(t[5]).toLowerCase(), created: t[6],
-        lat: Number(t[7]), lng: Number(t[8])
-      })).sort((a, b) => new Date(b.created) - new Date(a.created));
-      renderChips();
-      renderTable();
-      renderMapMarkers();
-      knownIds = new Set(tickets.map(t => t.id));
+                streetViewControl: true,
+
+                fullscreenControl: true
+            }
+        );
+
+        renderMap();
+
+    } catch (error) {
+
+        console.error(
+            "Google Maps could not be loaded:",
+            error
+        );
+
+        document.getElementById("map").innerHTML =
+            `
+            <div style="
+                height:100%;
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                text-align:center;
+                padding:20px;
+                background:#f3f4f6;
+                color:#6b7280;
+            ">
+                <div>
+                    <h3>Google Maps could not load</h3>
+                    <p>
+                        Please check your API key,
+                        Google Maps JavaScript API,
+                        and API restrictions.
+                    </p>
+                </div>
+            </div>
+            `;
+
     }
-    $('updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
-  } catch (err) {
-    console.error(err);
-    if (!tickets.length) {
-      ticketBody.innerHTML = '<tr><td colspan="6" class="center">Tickets could not be loaded. Retrying automatically.</td></tr>';
-    } else {
-      $('updated').textContent = 'Connection lost. Showing the last loaded tickets.';
-    }
-  }
+
 }
 
-$('chips').addEventListener('click', (e) => {
-  const btn = e.target.closest('.chip');
-  if (!btn) return;
-  filter = btn.dataset.f;
-  renderChips();
-  renderTable();
-});
-$('search').addEventListener('input', (e) => { query = e.target.value.trim(); renderTable(); });
 
-/* ---------- live updates: poll every 5s, pause while the tab is hidden ---------- */
-loadTickets();
-let timer = setInterval(loadTickets, 5000);
-document.addEventListener('visibilitychange', () => {
-  clearInterval(timer);
-  if (!document.hidden) { loadTickets(); timer = setInterval(loadTickets, 5000); }
-});
+/* =========================================================
+   LOCAL STORAGE
+   ========================================================= */
+
+function getComplaints() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem(STORAGE_KEY)
+        ) || [];
+
+    } catch {
+
+        return [];
+
+    }
+
+}
+
+
+function saveComplaints(complaints) {
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(complaints)
+    );
+
+}
+
+
+/* =========================================================
+   CATEGORY
+   ========================================================= */
+
+const category =
+    document.getElementById("category");
+
+const customCategoryGroup =
+    document.getElementById(
+        "customCategoryGroup"
+    );
+
+const customCategory =
+    document.getElementById(
+        "customCategory"
+    );
+
+
+category.addEventListener(
+    "change",
+    function () {
+
+        if (this.value === "Other") {
+
+            customCategoryGroup.style.display =
+                "flex";
+
+            customCategory.required = true;
+
+        } else {
+
+            customCategoryGroup.style.display =
+                "none";
+
+            customCategory.required = false;
+
+            customCategory.value = "";
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   CHARACTER COUNTER
+   ========================================================= */
+
+const description =
+    document.getElementById("description");
+
+const charCount =
+    document.getElementById("charCount");
+
+
+description.addEventListener(
+    "input",
+    function () {
+
+        charCount.textContent =
+            this.value.length;
+
+    }
+);
+
+
+/* =========================================================
+   FILE VALIDATION
+   ========================================================= */
+
+const fileInput =
+    document.getElementById("file");
+
+const fileInfo =
+    document.getElementById("fileInfo");
+
+
+fileInput.addEventListener(
+    "change",
+    function () {
+
+        const file = this.files[0];
+
+        if (!file) {
+
+            fileInfo.textContent =
+                "Maximum file size: 10 MB";
+
+            return;
+
+        }
+
+
+        const maxSize =
+            10 * 1024 * 1024;
+
+
+        if (file.size > maxSize) {
+
+            alert(
+                "File size must be less than 10 MB."
+            );
+
+            this.value = "";
+
+            fileInfo.textContent =
+                "Maximum file size: 10 MB";
+
+            return;
+
+        }
+
+
+        fileInfo.textContent =
+            `${file.name} selected (${formatFileSize(file.size)})`;
+
+    }
+);
+
+
+function formatFileSize(bytes) {
+
+    if (bytes < 1024)
+        return bytes + " B";
+
+    if (bytes < 1024 * 1024)
+        return (bytes / 1024).toFixed(1) + " KB";
+
+    return (
+        bytes / (1024 * 1024)
+    ).toFixed(1) + " MB";
+
+}
+
+
+/* =========================================================
+   LOCATION
+   ========================================================= */
+
+const locationBtn =
+    document.getElementById(
+        "locationBtn"
+    );
+
+const locationDisplay =
+    document.getElementById(
+        "locationDisplay"
+    );
+
+
+locationBtn.addEventListener(
+    "click",
+    function () {
+
+        if (!navigator.geolocation) {
+
+            alert(
+                "Geolocation is not supported by this browser."
+            );
+
+            return;
+
+        }
+
+
+        locationBtn.disabled = true;
+
+        locationBtn.textContent =
+            "📍 Getting location...";
+
+
+        navigator.geolocation.getCurrentPosition(
+
+            function (position) {
+
+                currentLocation = {
+
+                    lat:
+                        position.coords.latitude,
+
+                    lng:
+                        position.coords.longitude
+
+                };
+
+
+                locationDisplay.style.display =
+                    "block";
+
+
+                locationDisplay.innerHTML =
+                    `
+                    <strong>Location captured:</strong><br>
+                    Latitude:
+                    ${currentLocation.lat.toFixed(6)}
+                    <br>
+                    Longitude:
+                    ${currentLocation.lng.toFixed(6)}
+                    `;
+
+
+                locationBtn.disabled =
+                    false;
+
+                locationBtn.textContent =
+                    "📍 Location Captured";
+
+
+                if (map) {
+
+                    map.setCenter(
+                        currentLocation
+                    );
+
+                    map.setZoom(15);
+
+                }
+
+            },
+
+            function (error) {
+
+                console.error(error);
+
+                alert(
+                    "Unable to get your location. Please allow location permission."
+                );
+
+
+                locationBtn.disabled =
+                    false;
+
+                locationBtn.textContent =
+                    "📍 Use My Current Location";
+
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+
+        );
+
+    }
+);
+
+
+/* =========================================================
+   PRIORITY
+   ========================================================= */
+
+function calculatePriority(urgency) {
+
+    urgency = Number(urgency);
+
+    if (urgency >= 5)
+        return "Critical";
+
+    if (urgency >= 4)
+        return "High";
+
+    if (urgency >= 3)
+        return "Medium";
+
+    return "Low";
+
+}
+
+
+/* =========================================================
+   DEPARTMENT ROUTING
+   ========================================================= */
+
+function getDepartment(category) {
+
+    const departments = {
+
+        "Water":
+            "Water Department",
+
+        "Electricity":
+            "Electricity Department",
+
+        "Road":
+            "Road & Transport Department",
+
+        "Sanitation":
+            "Sanitation Department"
+
+    };
+
+
+    return departments[category]
+        || "General Administration";
+
+}
+
+
+/* =========================================================
+   FORM SUBMISSION
+   ========================================================= */
+
+const complaintForm =
+    document.getElementById(
+        "complaintForm"
+    );
+
+const statusMessage =
+    document.getElementById(
+        "statusMessage"
+    );
+
+
+complaintForm.addEventListener(
+    "submit",
+    function (event) {
+
+        event.preventDefault();
+
+
+        const categoryValue =
+            category.value;
+
+
+        const customValue =
+            customCategory.value.trim();
+
+
+        const urgency =
+            document.getElementById(
+                "urgency"
+            ).value;
+
+
+        const descriptionValue =
+            description.value.trim();
+
+
+        const contact =
+            document.getElementById(
+                "contact"
+            ).value.trim();
+
+
+        const file =
+            fileInput.files[0];
+
+
+        /* CONTACT VALIDATION */
+
+        if (!/^[0-9]{10}$/.test(contact)) {
+
+            alert(
+                "Please enter a valid 10-digit contact number."
+            );
+
+            return;
+
+        }
+
+
+        /* LOCATION */
+
+        if (!currentLocation) {
+
+            const confirmWithoutLocation =
+                confirm(
+                    "Location has not been captured. Submit without location?"
+                );
+
+            if (!confirmWithoutLocation)
+                return;
+
+        }
+
+
+        /* FILE SIZE */
+
+        if (file) {
+
+            const maxSize =
+                10 * 1024 * 1024;
+
+            if (file.size > maxSize) {
+
+                alert(
+                    "File must be smaller than 10 MB."
+                );
+
+                return;
+
+            }
+
+        }
+
+
+        /* FINAL CATEGORY */
+
+        const finalCategory =
+            categoryValue === "Other"
+                ? customValue
+                : categoryValue;
+
+
+        /* CREATE ID */
+
+        const id =
+            "CR-" +
+            Date.now().toString().slice(-6);
+
+
+        /* CREATE COMPLAINT */
+
+        const complaint = {
+
+            id: id,
+
+            category:
+                finalCategory,
+
+            originalCategory:
+                categoryValue,
+
+            urgency:
+                Number(urgency),
+
+            priority:
+                calculatePriority(urgency),
+
+            description:
+                descriptionValue,
+
+            contact:
+                contact,
+
+            fileName:
+                file ? file.name : "",
+
+            latitude:
+                currentLocation
+                    ? currentLocation.lat
+                    : null,
+
+            longitude:
+                currentLocation
+                    ? currentLocation.lng
+                    : null,
+
+            department:
+                getDepartment(categoryValue),
+
+            status:
+                Number(urgency) >= 5
+                    ? "Escalated"
+                    : "Open",
+
+            createdAt:
+                new Date().toISOString()
+
+        };
+
+
+        /* SAVE */
+
+        const complaints =
+            getComplaints();
+
+
+        complaints.unshift(
+            complaint
+        );
+
+
+        saveComplaints(
+            complaints
+        );
+
+
+        /* SUCCESS */
+
+        statusMessage.textContent =
+            "✓ Complaint submitted successfully!";
+
+        statusMessage.style.color =
+            "#15803d";
+
+
+        /* RESET */
+
+        complaintForm.reset();
+
+        customCategoryGroup.style.display =
+            "none";
+
+        customCategory.required =
+            false;
+
+        currentLocation =
+            null;
+
+        locationDisplay.style.display =
+            "none";
+
+        locationBtn.disabled =
+            false;
+
+        locationBtn.textContent =
+            "📍 Use My Current Location";
+
+
+        fileInfo.textContent =
+            "Maximum file size: 10 MB";
+
+
+        charCount.textContent =
+            "0";
+
+
+        /* REFRESH */
+
+        renderDashboard();
+
+        renderMap();
+
+
+        setTimeout(
+            function () {
+
+                statusMessage.textContent =
+                    "";
+
+            },
+            4000
+        );
+
+    }
+);
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+function renderDashboard() {
+
+    const complaints =
+        getComplaints();
+
+
+    /* STATS */
+
+    const total =
+        complaints.length;
+
+
+    const open =
+        complaints.filter(
+            c => c.status === "Open"
+        ).length;
+
+
+    const escalated =
+        complaints.filter(
+            c => c.status === "Escalated"
+        ).length;
+
+
+    const resolved =
+        complaints.filter(
+            c => c.status === "Resolved"
+        ).length;
+
+
+    document.getElementById(
+        "totalCount"
+    ).textContent = total;
+
+
+    document.getElementById(
+        "openCount"
+    ).textContent = open;
+
+
+    document.getElementById(
+        "escalatedCount"
+    ).textContent = escalated;
+
+
+    document.getElementById(
+        "resolvedCount"
+    ).textContent = resolved;
+
+
+    /* FILTER */
+
+    const searchText =
+        document.getElementById(
+            "search"
+        ).value.toLowerCase();
+
+
+    const filtered =
+        complaints.filter(
+            complaint => {
+
+                const filterMatch =
+                    activeFilter === "All"
+                    ||
+                    complaint.status ===
+                    activeFilter;
+
+
+                const searchMatch =
+                    complaint.description
+                        .toLowerCase()
+                        .includes(searchText)
+                    ||
+                    complaint.category
+                        .toLowerCase()
+                        .includes(searchText)
+                    ||
+                    complaint.id
+                        .toLowerCase()
+                        .includes(searchText);
+
+
+                return (
+                    filterMatch &&
+                    searchMatch
+                );
+
+            }
+        );
+
+
+    renderTable(filtered);
+
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+function renderTable(complaints) {
+
+    const table =
+        document.getElementById(
+            "complaintTable"
+        );
+
+
+    if (complaints.length === 0) {
+
+        table.innerHTML =
+            `
+            <tr>
+                <td colspan="7">
+                    <div class="empty">
+                        No complaints found.
+                    </div>
+                </td>
+            </tr>
+            `;
+
+        return;
+
+    }
+
+
+    table.innerHTML =
+        complaints.map(
+            complaint => {
+
+                const location =
+                    complaint.latitude !== null
+                    &&
+                    complaint.longitude !== null
+
+                    ? `
+                        <a
+                            href="https://www.google.com/maps/search/?api=1&query=${complaint.latitude},${complaint.longitude}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            📍 View Map
+                        </a>
+                      `
+
+                    : "Not available";
+
+
+                const statusClass =
+                    complaint.status
+                        .toLowerCase();
+
+
+                return `
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            ${escapeHTML(complaint.id)}
+                        </strong>
+                    </td>
+
+                    <td>
+                        ${escapeHTML(complaint.category)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            complaint.description
+                        )}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${complaint.urgency}/5
+                        </strong>
+                        <br>
+                        <small>
+                            ${escapeHTML(
+                                complaint.priority
+                            )}
+                        </small>
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            complaint.department
+                        )}
+                    </td>
+
+                    <td>
+                        <span
+                            class="badge ${statusClass}"
+                        >
+                            ${escapeHTML(
+                                complaint.status
+                            )}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${location}
+                    </td>
+
+                </tr>
+
+                `;
+
+            }
+        ).join("");
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+/* =========================================================
+   FILTER BUTTONS
+   ========================================================= */
+
+document.querySelectorAll(
+    ".filter-btn"
+).forEach(
+    button => {
+
+        button.addEventListener(
+            "click",
+            function () {
+
+                document.querySelectorAll(
+                    ".filter-btn"
+                ).forEach(
+                    btn =>
+                        btn.classList.remove(
+                            "active"
+                        )
+                );
+
+
+                this.classList.add(
+                    "active"
+                );
+
+
+                activeFilter =
+                    this.dataset.filter;
+
+
+                renderDashboard();
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+document.getElementById(
+    "search"
+).addEventListener(
+    "input",
+    renderDashboard
+);
+
+
+/* =========================================================
+   MAP MARKERS
+   ========================================================= */
+
+function renderMap() {
+
+    if (!map)
+        return;
+
+
+    /* REMOVE OLD MARKERS */
+
+    mapMarkers.forEach(
+        marker => marker.setMap(null)
+    );
+
+
+    mapMarkers = [];
+
+
+    const complaints =
+        getComplaints();
+
+
+    const validComplaints =
+        complaints.filter(
+            complaint =>
+                complaint.latitude !== null
+                &&
+                complaint.longitude !== null
+        );
+
+
+    /* CREATE MARKERS */
+
+    validComplaints.forEach(
+        complaint => {
+
+            const position = {
+
+                lat:
+                    Number(
+                        complaint.latitude
+                    ),
+
+                lng:
+                    Number(
+                        complaint.longitude
+                    )
+
+            };
+
+
+            const marker =
+                new google.maps.Marker({
+
+                    position:
+                        position,
+
+                    map:
+                        map,
+
+                    title:
+                        complaint.id
+
+                });
+
+
+            const infoWindow =
+                new google.maps.InfoWindow({
+
+                    content:
+                        `
+                        <div style="
+                            min-width:220px;
+                            padding:5px;
+                        ">
+
+                            <h3>
+                                ${escapeHTML(
+                                    complaint.category
+                                )}
+                            </h3>
+
+                            <p>
+                                <strong>
+                                    ID:
+                                </strong>
+                                ${escapeHTML(
+                                    complaint.id
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Problem:
+                                </strong>
+                                ${escapeHTML(
+                                    complaint.description
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Urgency:
+                                </strong>
+                                ${complaint.urgency}/5
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Status:
+                                </strong>
+                                ${escapeHTML(
+                                    complaint.status
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Department:
+                                </strong>
+                                ${escapeHTML(
+                                    complaint.department
+                                )}
+                            </p>
+
+                        </div>
+                        `
+
+                });
+
+
+            marker.addListener(
+                "click",
+                function () {
+
+                    infoWindow.open({
+                        map: map,
+                        anchor: marker
+                    });
+
+                }
+            );
+
+
+            mapMarkers.push(
+                marker
+            );
+
+        }
+    );
+
+
+    /* FIT MAP */
+
+    if (validComplaints.length > 0) {
+
+        const bounds =
+            new google.maps.LatLngBounds();
+
+
+        validComplaints.forEach(
+            complaint => {
+
+                bounds.extend({
+
+                    lat:
+                        Number(
+                            complaint.latitude
+                        ),
+
+                    lng:
+                        Number(
+                            complaint.longitude
+                        )
+
+                });
+
+            }
+        );
+
+
+        map.fitBounds(bounds);
+
+    }
+
+}
+
+
+/* =========================================================
+   INITIAL LOAD
+   ========================================================= */
+
+renderDashboard();
+
+
 </script>
+
+
+<!-- GOOGLE MAPS JAVASCRIPT API -->
+<script
+    async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC1iLCLn6_CnRrjTWl-_KILggLWbt1Fq9I&loading=async&callback=initMap"
+></script>
+
+
 </body>
 </html>
